@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("ACTIVE")
+  progress    Int      @default(0)
+  team        String   @default("SPIL Opti")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       Task[]
+  bugs        Bug[]
+  research    Research[]
+  decisions   Decision[]
+  documents   Document[]
+}
+
+model Research {
+  id          String   @id @default(cuid())
+  title       String
+  problem     String?
+  hypothesis  String?
+  experiment  String?
+  results     String?
+  conclusion  String?
+  nextSteps   String?
+  status      String   @default("IDEA")
+  tags        String   @default("[]")
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Decision {
+  id              String   @id @default(cuid())
+  number          Int      @unique
+  title           String
+  context         String?
+  decision        String
+  reason          String?
+  rejected        String?
+  status          String   @default("ACCEPTED")
+  affectedModules String   @default("[]")
+  projectId       String?
+  project         Project? @relation(fields: [projectId], references: [id])
+  createdAt       DateTime @default(now())
+}
+
+model Algorithm {
+  id             String   @id @default(cuid())
+  name           String
+  category       String
+  complexity     String?
+  description    String?
+  implementation String?
+  usedIn         String   @default("[]")
+  alternatives   String?
+  codeRef        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Idea {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  rating      Int      @default(3)
+  priority    String   @default("MEDIUM")
+  status      String   @default("BACKLOG")
+  tags        String   @default("[]")
+  projectId   String?
+  createdAt   DateTime @default(now())
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("TODO")
+  priority    String    @default("MEDIUM")
+  assignee    String?
+  dueDate     DateTime?
+  module      String?
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Bug {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  severity    String   @default("MEDIUM")
+  status      String   @default("OPEN")
+  module      String?
+  resolution  String?
+  assignee    String?
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  tags      String   @default("[]")
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  title     String?
+  context   String?
+  projectId String?
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  role           String
+  content        String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}

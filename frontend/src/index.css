@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ─── Base backgrounds ─── */
+  --bg-void:        #f8fafc;
+  --bg-base:        #f1f5f9;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #f8fafc;
+  --bg-overlay:     #e2e8f0;
+  --bg-glass:       rgba(255, 255, 255, 0.88);
+
+  /* ─── Neural cyan ─── */
+  --neural-core:    #0891b2;
+  --neural-pulse:   #0e7490;
+  --neural-rgb:     8, 145, 178;
+  --neural-glow:    rgba(8, 145, 178, 0.14);
+  --neural-trace:   rgba(8, 145, 178, 0.08);
+
+  /* ─── Hot yellow-green ─── */
+  --hot-core:       #65a30d;
+  --hot-rgb:        101, 163, 13;
+  --neural-hot-rgb: 101, 163, 13;
+  --hot-glow:       rgba(101, 163, 13, 0.18);
+
+  /* ─── Violet / intel ─── */
+  --violet-core:    #7c3aed;
+  --violet-rgb:     124, 58, 237;
+  --neural-violet-rgb: 124, 58, 237;
+  --violet-glow:    rgba(124, 58, 237, 0.16);
+  --intel-violet:   #7c3aed;
+  --intel-soft:     rgba(124, 58, 237, 0.10);
+
+  /* ─── Status ─── */
+  --status-active:  #059669;
+  --status-warning: #d97706;
+  --status-risk:    #e11d48;
+  --status-idle:    #64748b;
+
+  /* ─── Text ─── */
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+  --text-neural:    #0891b2;
+
+  /* ─── Borders ─── */
+  --border-subtle:  rgba(15, 23, 42, 0.08);
+  --border-default: rgba(8, 145, 178, 0.22);
+  --border-active:  rgba(8, 145, 178, 0.45);
+
+  /* ─── Overlays ─── */
+  --overlay-backdrop: rgba(15, 23, 42, 0.35);
+
+  /* ─── Graph (SVG / canvas) ─── */
+  --graph-bg-from:  rgba(8, 145, 178, 0.06);
+  --graph-bg-mid:   rgba(8, 145, 178, 0.02);
+  --graph-link:     rgba(8, 145, 178, 0.22);
+  --graph-link-hot: rgba(8, 145, 178, 0.38);
+  --graph-link-active: rgba(8, 145, 178, 0.72);
+  --graph-node-fill: #ffffff;
+  --graph-grid:     rgba(8, 145, 178, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .text-primary   { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted     { color: var(--text-muted); }
+  .text-neural    { color: var(--text-neural); }
+  .text-hot       { color: var(--hot-core); }
+  .text-violet    { color: var(--violet-core); }
+
+  .bg-void        { background-color: var(--bg-void); }
+  .bg-base        { background-color: var(--bg-base); }
+  .bg-surface     { background-color: var(--bg-surface); }
+  .bg-elevated    { background-color: var(--bg-elevated); }
+  .bg-overlay     { background-color: var(--bg-overlay); }
+  .bg-glass       { background-color: var(--bg-glass); }
+  .bg-backdrop    { background-color: var(--overlay-backdrop); }
+
+  .neural-glow-text {
+    text-shadow: none;
+  }
+  .hot-glow-text {
+    text-shadow: none;
+  }
+  .border-subtle  { border-color: var(--border-subtle); }
+  .border-default { border-color: var(--border-default); }
+  .border-active  { border-color: var(--border-active); }
+
+  .glass-panel {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  .neon-ring {
+    box-shadow:
+      0 0 0 1px var(--border-active),
+      0 0 8px var(--neural-glow);
+  }
+}
+
+/* ─── Neural logo pulse ─── */
+@keyframes neural-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  50%       { box-shadow: 0 0 12px var(--neural-glow); }
+}
+@keyframes hot-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--hot-glow); }
+  50%       { box-shadow: 0 0 10px var(--hot-glow); }
+}
+@keyframes scan-line {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes grid-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.neural-logo-pulse  { animation: neural-pulse-glow 0.9s ease-in-out; }
+.hot-pulse-anim     { animation: hot-pulse 2s ease-in-out infinite; }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: var(--bg-base); }
+::-webkit-scrollbar-thumb  { background: var(--neural-glow); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neural-pulse); }
+
+/* ─── Selection ─── */
+::selection { background: rgba(8, 145, 178, 0.18); color: var(--text-primary); }
