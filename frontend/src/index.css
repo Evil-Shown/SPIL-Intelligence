@@ -5,63 +5,67 @@
 @tailwind utilities;
 
 :root {
-  /* ─── Base backgrounds ─── */
-  --bg-void:        #f8fafc;
-  --bg-base:        #f1f5f9;
+  color-scheme: light;
+
+  /* ─── Base backgrounds (soft paper) ─── */
+  --bg-void:        #fbfcfe;
+  --bg-base:        #f5f7fb;
   --bg-surface:     #ffffff;
-  --bg-elevated:    #f8fafc;
-  --bg-overlay:     #e2e8f0;
-  --bg-glass:       rgba(255, 255, 255, 0.88);
+  --bg-elevated:    #f9fafd;
+  --bg-overlay:     #edf1f8;
+  --bg-glass:       rgba(255, 255, 255, 0.78);
 
-  /* ─── Neural cyan ─── */
-  --neural-core:    #0891b2;
-  --neural-pulse:   #0e7490;
-  --neural-rgb:     8, 145, 178;
-  --neural-glow:    rgba(8, 145, 178, 0.14);
-  --neural-trace:   rgba(8, 145, 178, 0.08);
+  /* ─── Neural soft periwinkle blue ─── */
+  --neural-core:    #6d8fe8;
+  --neural-pulse:   #8aa8f0;
+  --neural-rgb:     109, 143, 232;
+  --neural-pulse-rgb: 138, 168, 240;
+  --neural-glow:    rgba(109, 143, 232, 0.14);
+  --neural-trace:   rgba(109, 143, 232, 0.07);
 
-  /* ─── Hot yellow-green ─── */
-  --hot-core:       #65a30d;
-  --hot-rgb:        101, 163, 13;
-  --neural-hot-rgb: 101, 163, 13;
-  --hot-glow:       rgba(101, 163, 13, 0.18);
+  /* ─── Hot soft coral ─── */
+  --hot-core:       #ef9d76;
+  --hot-rgb:        239, 157, 118;
+  --neural-hot-rgb: 239, 157, 118;
+  --hot-glow:       rgba(239, 157, 118, 0.16);
 
-  /* ─── Violet / intel ─── */
-  --violet-core:    #7c3aed;
-  --violet-rgb:     124, 58, 237;
-  --neural-violet-rgb: 124, 58, 237;
-  --violet-glow:    rgba(124, 58, 237, 0.16);
-  --intel-violet:   #7c3aed;
-  --intel-soft:     rgba(124, 58, 237, 0.10);
+  /* ─── Violet / intel (soft lavender) ─── */
+  --violet-core:    #a78bfa;
+  --violet-rgb:     167, 139, 250;
+  --neural-violet-rgb: 167, 139, 250;
+  --violet-glow:    rgba(167, 139, 250, 0.15);
+  --intel-violet:   #a78bfa;
+  --intel-soft:     rgba(167, 139, 250, 0.10);
 
-  /* ─── Status ─── */
-  --status-active:  #059669;
-  --status-warning: #d97706;
-  --status-risk:    #e11d48;
-  --status-idle:    #64748b;
+  /* ─── Status (muted pastels) ─── */
+  --status-active:  #55b890;
+  --status-warning: #e2a94f;
+  --status-risk:    #e98aa0;
+  --risk-rgb:       233, 138, 160;
+  --status-idle:    #8d99ab;
 
-  /* ─── Text ─── */
-  --text-primary:   #0f172a;
-  --text-secondary: #475569;
-  --text-muted:     #94a3b8;
-  --text-neural:    #0891b2;
+  /* ─── Text (soft ink) ─── */
+  --text-primary:   #32415c;
+  --text-secondary: #5e6e89;
+  --text-muted:     #9caabe;
+  --text-neural:    #5c80d9;
 
   /* ─── Borders ─── */
-  --border-subtle:  rgba(15, 23, 42, 0.08);
-  --border-default: rgba(8, 145, 178, 0.22);
-  --border-active:  rgba(8, 145, 178, 0.45);
+  --border-subtle:  rgba(50, 65, 92, 0.07);
+  --border-default: rgba(109, 143, 232, 0.22);
+  --border-active:  rgba(109, 143, 232, 0.40);
 
   /* ─── Overlays ─── */
-  --overlay-backdrop: rgba(15, 23, 42, 0.35);
+  --overlay-backdrop: rgba(50, 65, 92, 0.25);
 
   /* ─── Graph (SVG / canvas) ─── */
-  --graph-bg-from:  rgba(8, 145, 178, 0.06);
-  --graph-bg-mid:   rgba(8, 145, 178, 0.02);
-  --graph-link:     rgba(8, 145, 178, 0.22);
-  --graph-link-hot: rgba(8, 145, 178, 0.38);
-  --graph-link-active: rgba(8, 145, 178, 0.72);
+  --graph-bg-from:  rgba(109, 143, 232, 0.06);
+  --graph-bg-mid:   rgba(109, 143, 232, 0.02);
+  --graph-link:     rgba(109, 143, 232, 0.18);
+  --graph-link-hot: rgba(109, 143, 232, 0.34);
+  --graph-link-active: rgba(109, 143, 232, 0.62);
   --graph-node-fill: #ffffff;
-  --graph-grid:     rgba(8, 145, 178, 0.12);
+  --graph-grid:     rgba(109, 143, 232, 0.08);
 }
 
 * {
@@ -77,7 +81,11 @@ body,
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg-base);
+  background:
+    radial-gradient(1100px 600px at 15% -10%, rgba(109, 143, 232, 0.07), transparent 60%),
+    radial-gradient(900px 500px at 90% 110%, rgba(167, 139, 250, 0.06), transparent 60%),
+    var(--bg-base);
+  background-attachment: fixed;
   color: var(--text-secondary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -100,10 +108,10 @@ body {
   .bg-backdrop    { background-color: var(--overlay-backdrop); }
 
   .neural-glow-text {
-    text-shadow: none;
+    text-shadow: 0 1px 18px rgba(109, 143, 232, 0.25);
   }
   .hot-glow-text {
-    text-shadow: none;
+    text-shadow: 0 1px 18px rgba(239, 157, 118, 0.25);
   }
   .border-subtle  { border-color: var(--border-subtle); }
   .border-default { border-color: var(--border-default); }
@@ -114,13 +122,16 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle);
-    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+    box-shadow:
+      0 8px 32px rgba(109, 143, 232, 0.10),
+      0 2px 8px rgba(50, 65, 92, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
   .neon-ring {
     box-shadow:
       0 0 0 1px var(--border-active),
-      0 0 8px var(--neural-glow);
+      0 4px 16px var(--neural-glow);
   }
 }
 
@@ -152,4 +163,4 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--neural-pulse); }
 
 /* ─── Selection ─── */
-::selection { background: rgba(8, 145, 178, 0.18); color: var(--text-primary); }
+::selection { background: rgba(109, 143, 232, 0.20); color: var(--text-primary); }

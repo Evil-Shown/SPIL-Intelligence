@@ -1,5 +1,5 @@
 export const APP_NAME = 'SPIL Intelligence';
-export const WORKSPACE_NAME = 'SPIL Opti';
+export const WORKSPACE_NAME = 'Company Brain';
 export const USER_NAME = 'Damitha';
 export const USER_ROLE = 'Engineering Lead';
 

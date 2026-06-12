@@ -707,7 +707,7 @@ export function InteractiveNeuralGraph({ fullscreen = false }: InteractiveNeural
         </p>
 
         {/* right panel */}
-        <aside className="absolute right-0 top-0 flex h-full w-[300px] flex-col border-l border-subtle bg-surface/90 p-5 shadow-[-8px_0_32px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+        <aside className="absolute right-0 top-0 flex h-full w-[300px] flex-col border-l border-subtle bg-surface/90 p-5 shadow-[-12px_0_40px_rgba(109,143,232,0.10)] backdrop-blur-xl">
           {/* panel header */}
           <div className="mb-4 flex items-center gap-2">
             <div className="h-1.5 w-1.5 rounded-full bg-neural-core shadow-[0_0_6px_var(--neural-core)]" />

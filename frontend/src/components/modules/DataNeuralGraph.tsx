@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Maximize2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { Activity, Maximize2, Network, RotateCcw, Sparkles, ZoomIn, ZoomOut } from 'lucide-react';
 import { APP_NAME, WORKSPACE_NAME } from '../../lib/constants';
 import {
   type GraphKind,
@@ -9,11 +9,11 @@ import {
   nodeBadgeVariant,
   nodeColors,
   useNeuralGraphData,
-} from '../../lib/neuralGraphData';
+} from '../../lib/companyBrainGraph';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
-const FPS_INTERVAL = 1000 / 30;
+const FPS_INTERVAL = 1000 / 60;
 
 interface Signal {
   linkId: string;
@@ -21,11 +21,16 @@ interface Signal {
   startTime: number;
 }
 
+interface RenderNode extends GraphNode {
+  x: number;
+  y: number;
+}
+
 function getCssVar(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
-/** Cyan-first palette — no yellow. Bugs stay red, R&D stays violet. */
+/** Soft palette keyed by node purpose. Bugs stay rose, workflows use the pulse color. */
 function kindRgb(
   kind: GraphKind,
   neuralRgb: string,
@@ -37,8 +42,13 @@ function kindRgb(
     case 'bug':
       return riskRgb;
     case 'research':
+    case 'idea':
+    case 'customer':
+    case 'communication':
       return violetRgb;
     case 'workspace':
+    case 'workflow':
+    case 'support':
       return pulseRgb;
     default:
       return neuralRgb;
@@ -56,7 +66,11 @@ interface AmbientNode {
 }
 
 function isHub(kind: GraphKind) {
-  return kind === 'workspace' || kind === 'group';
+  return kind === 'workspace' || kind === 'department' || kind === 'domain';
+}
+
+function isMajorNode(kind: GraphKind) {
+  return kind === 'workspace' || kind === 'department' || kind === 'workflow';
 }
 
 export function DataNeuralGraph() {
@@ -163,10 +177,10 @@ export function DataNeuralGraph() {
       const x = pos[node.id]?.x ?? node.x;
       const y = pos[node.id]?.y ?? node.y;
       const dist = Math.hypot(x - point.x, y - point.y);
-      const hitRadius = node.radius + 8;
+      const hitRadius = node.radius + (isHub(node.kind) ? 14 : 10);
       if (dist <= hitRadius && dist < bestDist) {
         bestDist = dist;
-        found = node;
+        found = { ...node, x, y };
       }
     }
     return found;
@@ -176,6 +190,16 @@ export function DataNeuralGraph() {
     setPan({ x: 0, y: 0 });
     setZoom(1);
     setPositions(Object.fromEntries(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }])));
+  };
+
+  const focusNode = (node: GraphNode) => {
+    const targetZoom = Math.min(1.55, Math.max(1.05, zoom));
+    setSelectedId(node.id);
+    setZoom(targetZoom);
+    setPan({
+      x: size.w * 0.43 - node.x * targetZoom,
+      y: size.h * 0.5 - node.y * targetZoom,
+    });
   };
 
   useEffect(() => {
@@ -199,9 +223,9 @@ export function DataNeuralGraph() {
     const initAmbient = (w: number, h: number) => {
       const cx = w * 0.5;
       const cy = h * 0.5;
-      const spread = Math.min(w, h) * 0.46;
+      const spread = Math.min(w, h) * 0.52;
       const nodes: AmbientNode[] = [];
-      for (let i = 0; i < 55; i++) {
+      for (let i = 0; i < 95; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = spread * Math.sqrt(Math.random());
         const x = cx + Math.cos(angle) * dist;
@@ -211,9 +235,9 @@ export function DataNeuralGraph() {
           y,
           baseX: x,
           baseY: y,
-          vx: (Math.random() - 0.5) * 0.06,
-          vy: (Math.random() - 0.5) * 0.06,
-          r: 0.6 + Math.random() * 1.1,
+          vx: (Math.random() - 0.5) * 0.045,
+          vy: (Math.random() - 0.5) * 0.045,
+          r: 0.45 + Math.random() * 1.35,
         });
       }
       ambientRef.current = nodes;
@@ -237,6 +261,28 @@ export function DataNeuralGraph() {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
 
+      const wash = ctx.createLinearGradient(0, 0, w, h);
+      wash.addColorStop(0, `rgba(${neuralRgb}, 0.075)`);
+      wash.addColorStop(0.32, 'rgba(255,255,255,0)');
+      wash.addColorStop(0.72, 'rgba(245,157,118,0.035)');
+      wash.addColorStop(1, 'rgba(167,139,250,0.07)');
+      ctx.fillStyle = wash;
+      ctx.fillRect(0, 0, w, h);
+
+      const auroraA = ctx.createRadialGradient(w * 0.2, h * 0.18, 0, w * 0.2, h * 0.18, w * 0.55);
+      auroraA.addColorStop(0, `rgba(${neuralRgb}, 0.09)`);
+      auroraA.addColorStop(0.5, `rgba(${neuralRgb}, 0.025)`);
+      auroraA.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = auroraA;
+      ctx.fillRect(0, 0, w, h);
+
+      const auroraB = ctx.createRadialGradient(w * 0.82, h * 0.78, 0, w * 0.82, h * 0.78, w * 0.48);
+      auroraB.addColorStop(0, 'rgba(167,139,250,0.09)');
+      auroraB.addColorStop(0.55, 'rgba(167,139,250,0.025)');
+      auroraB.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = auroraB;
+      ctx.fillRect(0, 0, w, h);
+
       const gridColor = getCssVar('--graph-grid', 'rgba(8,145,178,0.12)');
       const spacing = 32;
       ctx.fillStyle = gridColor;
@@ -251,8 +297,8 @@ export function DataNeuralGraph() {
       const cx = w * 0.5;
       const cy = h * 0.5;
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.55);
-      glow.addColorStop(0, `rgba(${neuralRgb}, 0.1)`);
-      glow.addColorStop(0.4, `rgba(${neuralRgb}, 0.03)`);
+      glow.addColorStop(0, `rgba(${neuralRgb}, 0.13)`);
+      glow.addColorStop(0.42, `rgba(${neuralRgb}, 0.035)`);
       glow.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, w, h);
@@ -264,6 +310,37 @@ export function DataNeuralGraph() {
       scan.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = scan;
       ctx.fillRect(0, 0, w, h);
+    };
+
+    const curvePoint = (from: Point, to: Point, curveOffset: number, progress: number): Point => {
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const cpx = mx + (-dy / len) * curveOffset;
+      const cpy = my + (dx / len) * curveOffset;
+      const oneMinus = 1 - progress;
+
+      return {
+        x: oneMinus * oneMinus * from.x + 2 * oneMinus * progress * cpx + progress * progress * to.x,
+        y: oneMinus * oneMinus * from.y + 2 * oneMinus * progress * cpy + progress * progress * to.y,
+      };
+    };
+
+    const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
     };
 
     const drawJarvisRings = (cx: number, cy: number, timestamp: number, rgb: string, scale = 1) => {
@@ -300,20 +377,30 @@ export function DataNeuralGraph() {
           const a = nodes[i];
           const b = nodes[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d > 90) continue;
+          if (d > 86) continue;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(${neuralRgb}, ${0.04 * (1 - d / 90)})`;
-          ctx.lineWidth = 0.4;
+          ctx.strokeStyle = `rgba(${neuralRgb}, ${0.035 * (1 - d / 86)})`;
+          ctx.lineWidth = 0.35;
           ctx.stroke();
         }
       }
 
-      nodes.forEach((n) => {
+      nodes.forEach((n, index) => {
+        if (index % 17 === 0) {
+          const haze = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 12);
+          haze.addColorStop(0, `rgba(${pulseRgb}, 0.08)`);
+          haze.addColorStop(1, `rgba(${pulseRgb}, 0)`);
+          ctx.fillStyle = haze;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r * 12, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${pulseRgb}, 0.35)`;
+        ctx.fillStyle = `rgba(${pulseRgb}, 0.26)`;
         ctx.fill();
       });
     };
@@ -324,7 +411,8 @@ export function DataNeuralGraph() {
       opacity: number,
       lineWidth: number,
       rgb: string,
-      curveOffset: number
+      curveOffset: number,
+      active = false
     ) => {
       const mx = (from.x + to.x) / 2;
       const my = (from.y + to.y) / 2;
@@ -338,6 +426,16 @@ export function DataNeuralGraph() {
       gradient.addColorStop(0, `rgba(${rgb}, ${opacity * 0.3})`);
       gradient.addColorStop(0.5, `rgba(${rgb}, ${opacity})`);
       gradient.addColorStop(1, `rgba(${rgb}, ${opacity * 0.25})`);
+
+      if (active) {
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.quadraticCurveTo(mx + nx * curveOffset, my + ny * curveOffset, to.x, to.y);
+        ctx.strokeStyle = `rgba(${rgb}, 0.12)`;
+        ctx.lineWidth = lineWidth + 5;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
 
       ctx.beginPath();
       ctx.moveTo(from.x, from.y);
@@ -390,8 +488,36 @@ export function DataNeuralGraph() {
       ctx.fill();
     };
 
+    const drawClusterHalo = (node: RenderNode, timestamp: number, rgb: string, focused: boolean) => {
+      const base =
+        node.kind === 'workspace'
+          ? node.radius * 8
+          : node.kind === 'department'
+            ? node.radius * 6.4
+            : node.radius * 5.2;
+      const radius = base + Math.sin(timestamp / 1600 + node.x * 0.01) * 3;
+      const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius);
+      glow.addColorStop(0, `rgba(${rgb}, ${focused ? 0.11 : 0.055})`);
+      glow.addColorStop(0.58, `rgba(${rgb}, ${focused ? 0.045 : 0.018})`);
+      glow.addColorStop(1, `rgba(${rgb}, 0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (node.kind !== 'workspace') {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius * 0.62, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${rgb}, ${focused ? 0.16 : 0.07})`;
+        ctx.lineWidth = 0.7;
+        ctx.setLineDash([2, 9]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    };
+
     const drawNode = (
-      node: GraphNode & Point,
+      node: RenderNode,
       active: boolean,
       timestamp: number,
       neuralRgb: string,
@@ -404,14 +530,20 @@ export function DataNeuralGraph() {
       const rgb = kindRgb(node.kind, neuralRgb, pulseRgb, violetRgb, riskRgb);
       const r = node.radius;
       const hub = isHub(node.kind);
-      const showLabel = active || hub || node.kind === 'project';
+      const showLabel =
+        active ||
+        hub ||
+        node.kind === 'project' ||
+        node.kind === 'workflow' ||
+        node.kind === 'person' ||
+        node.kind === 'customer';
 
       if (node.kind === 'workspace') {
         drawJarvisCore(node.x, node.y, r, timestamp, pulseRgb, neuralRgb);
       } else {
-        if (active) {
+        if (active || hub) {
           const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 3);
-          glow.addColorStop(0, `rgba(${rgb}, 0.2)`);
+          glow.addColorStop(0, `rgba(${rgb}, ${active ? 0.22 : 0.1})`);
           glow.addColorStop(1, `rgba(${rgb}, 0)`);
           ctx.fillStyle = glow;
           ctx.beginPath();
@@ -419,11 +551,25 @@ export function DataNeuralGraph() {
           ctx.fill();
         }
 
+        ctx.save();
+        ctx.shadowColor = `rgba(${rgb}, ${active ? 0.28 : 0.12})`;
+        ctx.shadowBlur = active || hub ? 16 : 7;
+
         ctx.beginPath();
         ctx.arc(node.x, node.y, r + (hub ? 2.5 : 1.5), 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(${rgb}, ${active ? 0.85 : hub ? 0.55 : 0.4})`;
         ctx.lineWidth = active ? 1.4 : hub ? 1.2 : 0.8;
         ctx.stroke();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r + (active ? 0.8 : 0), 0, Math.PI * 2);
+        const bead = ctx.createRadialGradient(node.x - r * 0.35, node.y - r * 0.42, 0, node.x, node.y, r * 1.4);
+        bead.addColorStop(0, 'rgba(255,255,255,1)');
+        bead.addColorStop(0.58, active ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.78)');
+        bead.addColorStop(1, `rgba(${rgb}, ${active ? 0.18 : 0.08})`);
+        ctx.fillStyle = bead;
+        ctx.fill();
 
         ctx.beginPath();
         ctx.arc(node.x, node.y, hub ? r * 0.55 : r * 0.35, 0, Math.PI * 2);
@@ -450,17 +596,47 @@ export function DataNeuralGraph() {
       }
 
       if (showLabel) {
-        const label = node.label.length > 28 ? `${node.label.slice(0, 28)}…` : node.label;
-        const fontSize = node.kind === 'workspace' ? 12 : node.kind === 'group' ? 10 : 9;
+        const label = node.label.length > 28 ? `${node.label.slice(0, 28)}...` : node.label;
+        const fontSize = node.kind === 'workspace' ? 12 : node.kind === 'department' ? 10 : 9;
         ctx.font = `500 ${fontSize}px "JetBrains Mono", monospace`;
-        ctx.fillStyle = active || node.kind === 'workspace' ? labelPrimary : labelSecondary;
-        ctx.fillText(label.toUpperCase(), node.x + r + 8, node.y + 3);
+        const text = label.toUpperCase();
+        const textWidth = ctx.measureText(text).width;
+        const labelX = node.x + r + 8;
+        const labelY = node.y - fontSize - 5;
+        const padX = 7;
+        const labelH = fontSize + 10;
+
+        roundRect(labelX - padX, labelY, textWidth + padX * 2, labelH, 8);
+        ctx.fillStyle = active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.7)';
+        ctx.fill();
+        ctx.strokeStyle = `rgba(${rgb}, ${active ? 0.24 : 0.12})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = active || node.kind === 'workspace' || node.kind === 'department' ? labelPrimary : labelSecondary;
+        ctx.fillText(text, labelX, labelY + fontSize + 2);
       }
     };
 
-    const drawSignal = (from: Point, to: Point, progress: number, neuralRgb: string, pulseRgb: string) => {
-      const x = from.x + (to.x - from.x) * progress;
-      const y = from.y + (to.y - from.y) * progress;
+    const drawSignal = (
+      from: Point,
+      to: Point,
+      progress: number,
+      curveOffset: number,
+      neuralRgb: string,
+      pulseRgb: string
+    ) => {
+      const { x, y } = curvePoint(from, to, curveOffset, progress);
+      const tail = curvePoint(from, to, curveOffset, Math.max(0, progress - 0.055));
+
+      ctx.beginPath();
+      ctx.moveTo(tail.x, tail.y);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = `rgba(${pulseRgb}, 0.38)`;
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
       const glow = ctx.createRadialGradient(x, y, 0, x, y, 14);
       glow.addColorStop(0, `rgba(${pulseRgb}, 0.9)`);
       glow.addColorStop(0.5, `rgba(${neuralRgb}, 0.4)`);
@@ -480,14 +656,14 @@ export function DataNeuralGraph() {
       if (timestamp - lastFrameRef.current < FPS_INTERVAL) return;
       lastFrameRef.current = timestamp;
 
-      const { selectedId: sel, hoveredId: hov, positions: pos, pan: p, zoom: z } =
+      const { selectedId: sel, hoveredId: hov, positions: pos, pan: p, zoom: z, dragging: drag } =
         interactionRef.current;
       const { nodes, links } = graphRef.current;
 
-      const neuralRgb = getCssVar('--neural-rgb', '8, 145, 178');
-      const pulseRgb = '14, 116, 144';
-      const violetRgb = getCssVar('--neural-violet-rgb', '124, 58, 237');
-      const riskRgb = '225, 29, 72';
+      const neuralRgb = getCssVar('--neural-rgb', '109, 143, 232');
+      const pulseRgb = getCssVar('--neural-pulse-rgb', '138, 168, 240');
+      const violetRgb = getCssVar('--neural-violet-rgb', '167, 139, 250');
+      const riskRgb = getCssVar('--risk-rgb', '233, 138, 160');
       const labelPrimary = getCssVar('--text-primary', '#0f172a');
       const labelSecondary = getCssVar('--text-secondary', '#475569');
 
@@ -511,10 +687,28 @@ export function DataNeuralGraph() {
 
       const positioned = nodes.map((n) => ({
         ...n,
-        x: pos[n.id]?.x ?? n.x,
-        y: pos[n.id]?.y ?? n.y,
+        x:
+          (pos[n.id]?.x ?? n.x) +
+          (drag?.id === n.id ? 0 : Math.sin(timestamp / 2400 + n.x * 0.013) * (isHub(n.kind) ? 0.9 : 1.6)),
+        y:
+          (pos[n.id]?.y ?? n.y) +
+          (drag?.id === n.id ? 0 : Math.cos(timestamp / 2600 + n.y * 0.011) * (isHub(n.kind) ? 0.8 : 1.35)),
       }));
       const map = new Map(positioned.map((n) => [n.id, n]));
+      const focusId = hov ?? sel;
+      const focusedIds = new Set<string>([focusId]);
+
+      links.forEach((link) => {
+        if (link.source === focusId) focusedIds.add(link.target);
+        if (link.target === focusId) focusedIds.add(link.source);
+      });
+
+      positioned
+        .filter((node) => isMajorNode(node.kind) || (node.kind === 'domain' && focusedIds.has(node.id)))
+        .forEach((node) => {
+          const rgb = kindRgb(node.kind, neuralRgb, pulseRgb, violetRgb, riskRgb);
+          drawClusterHalo(node, timestamp, rgb, focusedIds.has(node.id));
+        });
 
       links.forEach((link, index) => {
         const source = map.get(link.source);
@@ -523,11 +717,14 @@ export function DataNeuralGraph() {
 
         const active =
           sel === link.source || sel === link.target || hov === link.source || hov === link.target;
+        const inFocus = focusedIds.has(link.source) && focusedIds.has(link.target);
         const isHot =
           source.kind === 'workspace' ||
           target.kind === 'workspace' ||
-          source.kind === 'group' ||
-          target.kind === 'group';
+          source.kind === 'department' ||
+          target.kind === 'department' ||
+          source.kind === 'domain' ||
+          target.kind === 'domain';
 
         const linkKind =
           source.kind === 'bug' || target.kind === 'bug'
@@ -537,14 +734,16 @@ export function DataNeuralGraph() {
               : source.kind;
         const rgb = kindRgb(linkKind, neuralRgb, pulseRgb, violetRgb, riskRgb);
 
-        const opacity = active ? 0.75 : isHot ? 0.42 : 0.18;
+        const opacity = active ? 0.82 : inFocus ? 0.46 : isHot ? 0.28 : 0.1;
+        const curveOffset = Math.sin(index * 1.7) * 10;
         drawCurvedLink(
           source,
           target,
           opacity,
-          active ? 1.2 : isHot ? 0.85 : 0.55,
+          active ? 1.35 : inFocus ? 0.95 : isHot ? 0.7 : 0.42,
           rgb,
-          Math.sin(index * 1.7) * 10
+          curveOffset,
+          active
         );
       });
 
@@ -554,11 +753,14 @@ export function DataNeuralGraph() {
         const source = map.get(link.source);
         const target = map.get(link.target);
         if (!source || !target) return;
-        drawSignal(source, target, signal.progress, neuralRgb, pulseRgb);
+        const linkIndex = links.findIndex((l) => l.id === signal.linkId);
+        drawSignal(source, target, signal.progress, Math.sin(linkIndex * 1.7) * 10, neuralRgb, pulseRgb);
       });
 
-      positioned.forEach((node) => {
-        const active = sel === node.id || hov === node.id;
+      [...positioned]
+        .sort((a, b) => Number(focusedIds.has(a.id)) - Number(focusedIds.has(b.id)))
+        .forEach((node) => {
+        const active = sel === node.id || hov === node.id || focusedIds.has(node.id);
         drawNode(node, active, timestamp, neuralRgb, pulseRgb, violetRgb, riskRgb, labelPrimary, labelSecondary);
       });
 
@@ -601,6 +803,12 @@ export function DataNeuralGraph() {
     setHoveredId(hit?.id ?? null);
   };
 
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const gp = screenToGraph(e.clientX, e.clientY);
+    const hit = hitTest(gp);
+    if (hit) focusNode(hit);
+  };
+
   const handlePointerUp = () => {
     setDragging(null);
     setPanning(null);
@@ -625,12 +833,15 @@ export function DataNeuralGraph() {
       <div ref={containerRef} className="absolute inset-0 z-10">
         <canvas
           ref={canvasRef}
-          className="h-full w-full cursor-grab touch-none active:cursor-grabbing"
+          className={`h-full w-full touch-none ${
+            dragging || panning ? 'cursor-grabbing' : hoveredId ? 'cursor-pointer' : 'cursor-grab'
+          }`}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onWheel={handleWheel}
+          onDoubleClick={handleDoubleClick}
         />
       </div>
 
@@ -666,13 +877,58 @@ export function DataNeuralGraph() {
       </div>
 
       <p className="pointer-events-none absolute bottom-4 left-1/2 z-20 -translate-x-1/2 font-mono text-[10px] uppercase tracking-widest text-muted">
-        drag nodes · pan · scroll to zoom · click to inspect
+        drag nodes · double-click to focus · scroll to zoom · click to inspect
       </p>
 
-      <aside className="absolute right-0 top-0 z-20 flex h-full w-[300px] flex-col border-l border-subtle bg-surface/90 p-5 shadow-[-8px_0_32px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="h-1.5 w-1.5 rounded-full bg-neural-core shadow-[0_0_6px_var(--neural-core)]" />
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted">Node metadata</p>
+      <div className="pointer-events-none absolute bottom-5 left-5 z-20 w-[280px] rounded-2xl border border-subtle bg-surface/80 p-4 shadow-[0_16px_48px_rgba(109,143,232,0.14)] backdrop-blur-xl">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="rounded-lg bg-neural-glow p-1.5 text-neural-core">
+            <Network size={14} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-primary">Company Brain Map</p>
+            <p className="font-mono text-[9px] uppercase tracking-widest text-muted">Live ecosystem prototype</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: 'Departments', color: 'var(--neural-core)' },
+            { label: 'People', color: 'var(--status-active)' },
+            { label: 'Workflows', color: 'var(--hot-core)' },
+            { label: 'Customers', color: 'var(--violet-core)' },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-2 rounded-lg bg-surface/65 px-2.5 py-2">
+              <span className="h-2 w-2 rounded-full" style={{ background: item.color, boxShadow: `0 0 10px ${item.color}` }} />
+              <span className="text-[10px] font-medium text-secondary">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pointer-events-none absolute left-1/2 top-5 z-20 hidden w-[360px] -translate-x-1/2 rounded-2xl border border-subtle bg-surface/75 px-4 py-3 shadow-[0_16px_48px_rgba(167,139,250,0.12)] backdrop-blur-xl lg:block">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 rounded-lg bg-[var(--violet-glow)] p-1.5 text-violet-core">
+            <Sparkles size={14} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-primary">Signal flow example</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-secondary">
+              Customer bug {'->'} Support triage {'->'} BA scope {'->'} Dev task {'->'} Opti insight {'->'} QA signoff {'->'} Deploy {'->'} Customer review.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <aside className="absolute right-0 top-0 z-20 flex h-full w-[320px] flex-col border-l border-subtle bg-surface/90 p-5 shadow-[-12px_0_40px_rgba(109,143,232,0.10)] backdrop-blur-xl">
+        <div className="mb-5 rounded-2xl border border-subtle bg-gradient-to-br from-white to-elevated p-4 shadow-[0_12px_32px_rgba(109,143,232,0.10)]">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-neural-core shadow-[0_0_6px_var(--neural-core)]" />
+            <p className="font-mono text-[9px] uppercase tracking-widest text-muted">Selected intelligence node</p>
+          </div>
+          <p className="text-xl font-semibold tracking-tight text-primary">{selectedNode?.label ?? 'SPIL Intelligence'}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-secondary">
+            Click connected signals below to move through this part of the company brain.
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -763,10 +1019,10 @@ export function DataNeuralGraph() {
         <div className="mt-4 border-t border-subtle pt-4">
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Projects', value: counts.projects, color: 'var(--neural-core)' },
-              { label: 'Tasks', value: counts.tasks, color: 'var(--neural-pulse)' },
-              { label: 'Bugs', value: counts.bugs, color: 'var(--status-risk)' },
-              { label: 'Ideas', value: counts.ideas, color: 'var(--violet-core)' },
+              { label: 'Departments', value: counts.departments, color: 'var(--neural-core)' },
+              { label: 'People', value: counts.people, color: 'var(--status-active)' },
+              { label: 'Workflows', value: counts.workflows, color: 'var(--hot-core)' },
+              { label: 'Links', value: counts.links, color: 'var(--violet-core)' },
             ].map((stat) => (
               <div key={stat.label} className="rounded-lg border border-subtle bg-elevated/40 px-3 py-2">
                 <p className="font-mono text-[9px] uppercase tracking-widest text-muted">{stat.label}</p>
