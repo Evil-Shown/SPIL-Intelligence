@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { DataNeuralGraph } from '../modules/DataNeuralGraph';
+import { streamChat } from '../../services/endpoints';
 
 const columns = [
   { left: '2%', width: 92, duration: '46s', reverse: false, blur: 1.6 },
@@ -66,15 +67,36 @@ const links = [
 ];
 
 export function CommandDeck() {
-  const navigate = useNavigate();
   const [command, setCommand] = useState('');
   const [showMap, setShowMap] = useState(false);
+  const [reply, setReply] = useState('');
+  const [asked, setAsked] = useState('');
+  const [waiting, setWaiting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const submit = (event: FormEvent) => {
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const text = command.trim();
-    if (!text) return;
-    navigate('/ai', { state: { initialMessage: text } });
+    if (!text || waiting) return;
+    setCommand('');
+    setAsked(text);
+    setReply('');
+    setWaiting(true);
+    let body = '';
+    await streamChat(
+      text,
+      {},
+      (delta) => {
+        body += delta;
+        setReply(body);
+      },
+      () => setWaiting(false),
+      () => setWaiting(false)
+    );
   };
 
   return (
@@ -101,15 +123,17 @@ export function CommandDeck() {
           <div className="h-px w-[min(100%,380px)] bg-black" />
           <div className="mt-3.5 h-0 w-0 border-x-[6px] border-x-transparent border-b-[9px] border-b-[#d10505] drop-shadow-[0_1px_0_rgba(209,5,5,0.25)]" />
           <input
+            ref={inputRef}
             value={command}
             onChange={(event) => setCommand(event.target.value)}
             placeholder="Ask the company brain"
             aria-label="Command"
-            className="mt-6 w-full border-0 border-b border-transparent bg-transparent pb-1 text-center font-mono text-[12px] font-semibold uppercase tracking-[0.28em] text-black outline-none transition-colors placeholder:text-black/45 focus:border-black/40"
+            disabled={waiting}
+            className="mt-6 w-full border-0 border-b border-transparent bg-transparent pb-1 text-center font-mono text-[12px] font-semibold uppercase tracking-[0.28em] text-black outline-none transition-colors placeholder:text-black/45 focus:border-black/40 disabled:opacity-40"
           />
         </form>
 
-        <div className="mt-10 w-full max-w-[420px] border border-black/90 bg-white shadow-[0_24px_60px_rgba(0,0,0,0.07)]">
+        <div className="mt-10 w-full max-w-[520px] border border-black/90 bg-white shadow-[0_24px_60px_rgba(0,0,0,0.07)]">
           <div className="flex items-center justify-between border-b border-black/90 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.26em] text-black">
             <span>Company brain online</span>
             <span className="flex gap-[5px]">
@@ -117,10 +141,11 @@ export function CommandDeck() {
               <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" style={{ animationDelay: '1.1s' }} />
             </span>
           </div>
-          <div className="bg-[#0a0a0a] px-3.5 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-white/95">
+          <div className="max-h-48 overflow-y-auto bg-[#0a0a0a] px-3.5 py-3.5 font-mono text-[12px] leading-relaxed text-white/95" aria-live="polite">
+            {asked && <p className="mb-2 uppercase tracking-[0.16em] text-white/55">&gt; {asked}</p>}
             <div>
-              Reading workspace
-              <span className="caret-blink text-white">_</span>
+              {waiting && !reply ? 'Reading workspace' : reply || 'Reading workspace'}
+              {(waiting || !reply) && <span className="caret-blink">_</span>}
             </div>
             <div className="mt-3 h-px w-full bg-white/15">
               <div className="signal-load h-px bg-white" />
