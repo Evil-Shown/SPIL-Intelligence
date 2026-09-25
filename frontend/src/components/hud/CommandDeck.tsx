@@ -17,7 +17,7 @@ const columns = [
 
 const barPattern = [6, 28, 4, 52, 11, 8, 36, 5, 18, 7, 44, 3, 22, 9, 14, 40];
 
-function DataField() {
+export function DataField() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {columns.map((column) => (

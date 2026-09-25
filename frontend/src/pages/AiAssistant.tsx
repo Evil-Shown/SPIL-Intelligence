@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { CardSkeleton } from '../components/ui/Skeleton';
-import { ChatMessage } from '../components/modules/ChatMessage';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { DataField } from '../components/hud/CommandDeck';
 import { aiApi, projectsApi, streamChat } from '../services/endpoints';
 import { useUiStore } from '../store/uiStore';
-import { formatRelativeTime, cn } from '../lib/utils';
+import { formatRelativeTime } from '../lib/utils';
 
 export function AiAssistant() {
   const location = useLocation();
@@ -15,11 +14,13 @@ export function AiAssistant() {
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string>();
-  const [projectId, setProjectId] = useState<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [projectId, setProjectId] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const sentFromHome = useRef(false);
   const triggerNeuralPulse = useUiStore((s) => s.triggerNeuralPulse);
 
-  const { data: conversations, isLoading: convsLoading } = useQuery({
+  const { data: conversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: aiApi.conversations,
   });
@@ -31,14 +32,15 @@ export function AiAssistant() {
 
   useEffect(() => {
     const state = location.state as { initialMessage?: string } | null;
-    if (state?.initialMessage) {
+    if (state?.initialMessage && !sentFromHome.current) {
+      sentFromHome.current = true;
       sendMessage(state.initialMessage);
       window.history.replaceState({}, '');
     }
   }, [location.state]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = async (text?: string) => {
@@ -46,12 +48,10 @@ export function AiAssistant() {
     if (!msg || streaming) return;
 
     setInput('');
-    setMessages((prev) => [...prev, { role: 'USER', content: msg }]);
+    setMessages((prev) => [...prev, { role: 'USER', content: msg }, { role: 'ASSISTANT', content: '' }]);
     setStreaming(true);
 
     let assistantContent = '';
-    setMessages((prev) => [...prev, { role: 'ASSISTANT', content: '' }]);
-
     await streamChat(
       msg,
       { conversationId, projectId: projectId || undefined },
@@ -75,111 +75,145 @@ export function AiAssistant() {
   const loadConversation = async (id: string) => {
     const conv = await aiApi.getConversation(id);
     setConversationId(id);
-    setMessages(
-      conv.messages?.map((m) => ({ role: m.role as 'USER' | 'ASSISTANT', content: m.content })) ?? []
-    );
+    setMessages(conv.messages?.map((m) => ({ role: m.role as 'USER' | 'ASSISTANT', content: m.content })) ?? []);
+    setShowHistory(false);
   };
 
-  const newChat = () => {
-    setConversationId(undefined);
-    setMessages([]);
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    sendMessage();
   };
+
+  const idle = messages.length === 0;
 
   return (
-    <div className="flex h-[calc(100vh-120px)] gap-4">
-      <aside className="hidden w-[280px] shrink-0 flex-col rounded-xl border border-subtle bg-surface lg:flex">
-        <div className="flex items-center justify-between border-b border-subtle p-4">
-          <h2 className="text-sm font-semibold text-primary">History</h2>
-          <Button variant="ghost" size="sm" onClick={newChat}>New</Button>
+    <div className="relative flex h-full flex-col overflow-hidden bg-[#f7f7f7] text-black">
+      <DataField />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.9) 24%, rgba(255,255,255,0.45) 52%, rgba(190,190,190,0.28) 100%)',
+        }}
+      />
+
+      <header className="relative z-10 flex items-center justify-between px-6 pt-6 text-[10px] uppercase tracking-[0.28em]">
+        <Link to="/" className="font-display tracking-[0.46em] text-black/35 hover:text-black">
+          SPIL
+        </Link>
+        <div className="flex items-center gap-4 font-mono text-black/40">
+          <button type="button" onClick={() => setShowHistory((open) => !open)} className="hover:text-black">
+            {showHistory ? 'Close' : 'History'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConversationId(undefined);
+              setMessages([]);
+            }}
+            className="hover:text-black"
+          >
+            New
+          </button>
+          <select
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
+            className="bg-transparent uppercase tracking-[0.18em] outline-none"
+            aria-label="Project context"
+          >
+            <option value="">No project</option>
+            {projects?.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
-          {convsLoading ? (
-            <CardSkeleton />
-          ) : (
-            conversations?.map((conv) => (
+      </header>
+
+      {showHistory && (
+        <div className="relative z-10 mx-auto mt-4 w-full max-w-md border border-black/80 bg-white px-4 py-3 font-mono text-[10px] uppercase tracking-[0.16em]">
+          {conversations?.length ? (
+            conversations.map((conv) => (
               <button
                 key={conv.id}
+                type="button"
                 onClick={() => loadConversation(conv.id)}
-                className={cn(
-                  'mb-1 w-full rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-overlay',
-                  conversationId === conv.id && 'bg-overlay border-l-2 border-neural-core'
-                )}
+                className="flex w-full items-baseline justify-between gap-4 py-1.5 text-left text-black/60 hover:text-black"
               >
-                <p className="truncate text-xs text-primary">{conv.title ?? 'Untitled'}</p>
-                <p className="text-[10px] text-muted">{formatRelativeTime(conv.updatedAt)}</p>
+                <span className="truncate">{conv.title ?? 'Untitled'}</span>
+                <span className="shrink-0 text-black/30">{formatRelativeTime(conv.updatedAt)}</span>
               </button>
             ))
-          )}
-        </div>
-      </aside>
-
-      <div className="flex flex-1 flex-col rounded-xl border border-subtle bg-surface">
-        <div className="border-b border-subtle p-4">
-          <h1 className="text-lg font-bold text-primary">AI Assistant</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-muted">Project context:</span>
-              <select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="rounded-lg border border-default bg-elevated px-2 py-1 text-primary"
-              >
-                <option value="">None</option>
-                {projects?.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-wrap gap-2 text-status-active">
-              {['Docs', 'Research', 'Decisions', 'Algorithms', 'Tasks'].map((ctx) => (
-                <span key={ctx}>✓ {ctx}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neural-glow">
-                <div className="h-6 w-6 rounded-full bg-neural-core shadow-[0_0_12px_var(--neural-core)]" />
-              </div>
-              <h2 className="text-lg font-semibold text-primary">SPIL Intelligence</h2>
-              <p className="mt-2 max-w-md text-sm text-muted">
-                Ask about geometry algorithms, project decisions, shapes-core, or glass manufacturing workflows.
-              </p>
-            </div>
           ) : (
-            messages.map((msg, i) => (
-              <ChatMessage
-                key={i}
-                role={msg.role}
-                content={msg.content}
-                streaming={streaming && i === messages.length - 1 && msg.role === 'ASSISTANT'}
-              />
-            ))
+            <p className="text-black/35">No earlier commands</p>
           )}
-          <div ref={messagesEndRef} />
         </div>
+      )}
 
-        <form
-          onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-          className="border-t border-subtle p-4"
-        >
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask SPIL Intelligence..."
-              className="flex-1"
-              disabled={streaming}
-            />
-            <Button type="submit" disabled={streaming || !input.trim()}>
-              {streaming ? '...' : 'Send'}
-            </Button>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6">
+        {idle ? (
+          <div className="rise-in my-auto flex w-full max-w-lg flex-col items-center pb-10 text-center">
+            <div className="h-px w-[min(100%,380px)] bg-black" />
+            <p className="font-display my-[14px] text-[12px] font-medium uppercase tracking-[0.5em] sm:text-[14px]">
+              What are your commands?
+            </p>
+            <div className="h-px w-[min(100%,380px)] bg-black" />
+            <div className="mt-3.5 h-0 w-0 border-x-[6px] border-x-transparent border-b-[9px] border-b-[#d10505]" />
           </div>
-        </form>
+        ) : (
+          <div className="my-auto w-full max-w-[640px] space-y-6 py-10">
+            {messages.map((message, index) =>
+              message.role === 'USER' ? (
+                <p key={index} className="text-center font-display text-[13px] uppercase tracking-[0.28em]">
+                  {message.content}
+                </p>
+              ) : (
+                <div key={index} className="border border-black/90 bg-white shadow-[0_18px_50px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center justify-between border-b border-black/90 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.26em]">
+                    <span>Company brain</span>
+                    <span className="flex gap-[5px]">
+                      <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" />
+                      <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" style={{ animationDelay: '1.1s' }} />
+                    </span>
+                  </div>
+                  <div className="bg-[#0a0a0a] px-4 py-4 font-mono text-[12px] leading-relaxed tracking-wide text-white/90">
+                    {message.content ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                    ) : (
+                      <span>
+                        Reading
+                        <span className="caret-blink">_</span>
+                      </span>
+                    )}
+                    {streaming && index === messages.length - 1 && message.content && <span className="caret-blink">_</span>}
+                  </div>
+                </div>
+              )
+            )}
+            <div ref={bottomRef} />
+          </div>
+        )}
       </div>
+
+      <form onSubmit={onSubmit} className="relative z-10 px-6 pb-8">
+        <div className="mx-auto flex w-full max-w-[420px] items-end gap-3 border border-black/90 bg-white">
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Ask the company brain"
+            disabled={streaming}
+            className="w-full bg-transparent px-3.5 py-3 font-mono text-[11px] uppercase tracking-[0.22em] outline-none placeholder:text-black/25 disabled:opacity-40"
+          />
+          <button
+            type="submit"
+            disabled={streaming || !input.trim()}
+            className="px-3.5 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[#d10505] disabled:opacity-30"
+          >
+            {streaming ? '…' : 'Send'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

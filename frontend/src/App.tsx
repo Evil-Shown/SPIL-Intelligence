@@ -34,6 +34,7 @@ export default function App() {
           <Routes>
             <Route element={<NeuralHomeLayout />}>
               <Route index element={<Dashboard />} />
+              <Route path="ai" element={<AiAssistant />} />
             </Route>
             <Route element={<AppLayout />}>
               <Route path="projects" element={<Projects />} />
@@ -46,7 +47,6 @@ export default function App() {
               <Route path="tasks" element={<Tasks />} />
               <Route path="bugs" element={<Bugs />} />
               <Route path="documents" element={<Documents />} />
-              <Route path="ai" element={<AiAssistant />} />
               <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
