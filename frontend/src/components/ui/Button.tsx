@@ -9,17 +9,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', children, ...props }, ref) => {
     const base =
-      'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed';
+      'inline-flex items-center justify-center font-medium uppercase tracking-[0.14em] rounded-none transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
 
     const variants = {
       primary:
-        'bg-neural-core text-white font-bold hover:brightness-110 hover:shadow-neural-sm tracking-wide',
+        'border-2 border-[var(--machine)] bg-black text-[var(--machine)] hover:bg-[var(--machine)] hover:text-black',
       ghost:
-        'bg-transparent border border-default text-secondary hover:border-active hover:text-primary hover:bg-elevated',
+        'bg-black border-2 border-white/30 text-secondary hover:border-white hover:text-white',
       danger:
-        'bg-transparent border border-status-risk/30 text-status-risk hover:bg-status-risk/10',
+        'bg-black border-2 border-[var(--samaritan)] text-[var(--samaritan)] hover:bg-[var(--samaritan)] hover:text-black',
       hot:
-        'bg-hot-core text-white font-bold hover:brightness-110 hover:shadow-hot tracking-wide',
+        'bg-black border-2 border-[var(--asset)] text-[var(--asset)] hover:bg-[var(--asset)] hover:text-black',
     };
 
     const sizes = {

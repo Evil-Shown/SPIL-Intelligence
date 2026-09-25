@@ -18,9 +18,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={id}
           className={cn(
-            'w-full rounded-lg border border-default bg-elevated px-3 py-2 text-sm text-primary',
-            'placeholder:text-muted focus:border-neural-core focus:outline-none',
-            'focus:shadow-[0_0_0_3px_var(--neural-trace)] transition-all duration-200',
+            'w-full rounded-none border-2 border-white/25 bg-black px-3 py-2 text-sm text-primary',
+            'placeholder:text-muted focus:border-[var(--machine)] focus:outline-none',
+            'transition-all duration-150',
             className
           )}
           {...props}

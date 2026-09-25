@@ -78,8 +78,8 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 flex h-full flex-col border-r border-subtle transition-all duration-300',
-          'bg-surface/80 backdrop-blur-xl',
+          'fixed left-0 top-0 z-40 flex h-full flex-col border-r-2 border-white/20 transition-all duration-300',
+          'bg-black',
           sidebarCollapsed ? 'w-16' : 'w-60',
           sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
@@ -103,8 +103,8 @@ export function Sidebar() {
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-bold tracking-tight text-primary">{APP_NAME}</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-neural">
+              <div className="hud-title text-sm text-[var(--machine)]">{APP_NAME}</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/50">
                 {WORKSPACE_NAME}
               </div>
             </div>
@@ -128,7 +128,7 @@ export function Sidebar() {
                   onClick={() => setSidebarMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
-                      'group mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200',
+                      'group mb-0.5 flex items-center gap-3 rounded-none px-3 py-2.5 text-sm uppercase tracking-wide transition-all duration-150',
                       'text-muted hover:bg-elevated hover:text-primary',
                       isActive && 'bg-neural-trace text-neural border-l-2 border-neural-core shadow-[inset_0_0_12px_var(--neural-trace)]',
                       sidebarCollapsed && 'justify-center px-2'
@@ -160,7 +160,7 @@ export function Sidebar() {
         {/* User */}
         <div className="border-t border-subtle p-3">
           {!sidebarCollapsed ? (
-            <div className="flex items-center gap-3 rounded-lg border border-subtle bg-elevated/60 p-3">
+            <div className="flex items-center gap-3 border-2 border-white/20 bg-black p-3">
               <div
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-active/40 font-mono text-xs font-bold text-neural"
                 style={{ background: 'radial-gradient(circle, var(--neural-trace), var(--bg-elevated))' }}

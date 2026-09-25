@@ -4,8 +4,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['Share Tech Mono', 'ui-monospace', 'monospace'],
+        mono: ['Share Tech Mono', 'ui-monospace', 'monospace'],
+        display: ['Oswald', 'sans-serif'],
       },
       colors: {
         void:    'var(--bg-void)',

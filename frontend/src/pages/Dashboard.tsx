@@ -1,9 +1,9 @@
-import { DataNeuralGraph } from '../components/modules/DataNeuralGraph';
+import { CommandDeck } from '../components/hud/CommandDeck';
 
 export function Dashboard() {
   return (
-    <div className="relative h-full w-full bg-base">
-      <DataNeuralGraph />
+    <div className="relative h-full w-full">
+      <CommandDeck />
     </div>
   );
 }

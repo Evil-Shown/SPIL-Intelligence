@@ -24,14 +24,14 @@ export function TopBar() {
   const label = routeLabels[basePath] ?? routeLabels[location.pathname] ?? 'SPIL Opti';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-subtle bg-surface/60 px-4 backdrop-blur-xl lg:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b-2 border-white/20 bg-black px-4 lg:px-6">
       {/* Thin scan line accent */}
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neural-core/40 to-transparent" />
 
       {/* Breadcrumb */}
       <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
-        <Link to="/" className="font-mono text-[10px] uppercase tracking-widest text-muted transition-colors hover:text-neural">
-          SPIL Opti
+        <Link to="/" className="hud-title text-xs text-[var(--machine)] transition-colors hover:text-white">
+          SPIL
         </Link>
         <span className="text-muted/40">/</span>
         <span className="truncate font-semibold tracking-wide text-primary">{label}</span>

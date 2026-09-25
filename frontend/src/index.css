@@ -1,71 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Share+Tech+Mono&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* ─── Base backgrounds (soft paper) ─── */
-  --bg-void:        #fbfcfe;
-  --bg-base:        #f5f7fb;
-  --bg-surface:     #ffffff;
-  --bg-elevated:    #f9fafd;
-  --bg-overlay:     #edf1f8;
-  --bg-glass:       rgba(255, 255, 255, 0.78);
+  /* Control-room field. Machine green runs the core. Red marks gates. */
+  --bg-void:        #070707;
+  --bg-base:        #121212;
+  --bg-surface:     #000000;
+  --bg-elevated:    #161616;
+  --bg-overlay:     #1e1e1e;
+  --bg-glass:       rgba(0, 0, 0, 0.82);
 
-  /* ─── Neural soft periwinkle blue ─── */
-  --neural-core:    #6d8fe8;
-  --neural-pulse:   #8aa8f0;
-  --neural-rgb:     109, 143, 232;
-  --neural-pulse-rgb: 138, 168, 240;
-  --neural-glow:    rgba(109, 143, 232, 0.14);
-  --neural-trace:   rgba(109, 143, 232, 0.07);
+  --neural-core:    #3dff6a;
+  --neural-pulse:   #8dffb0;
+  --neural-rgb:     61, 255, 106;
+  --neural-pulse-rgb: 141, 255, 176;
+  --neural-glow:    rgba(61, 255, 106, 0.18);
+  --neural-trace:   rgba(61, 255, 106, 0.08);
 
-  /* ─── Hot soft coral ─── */
-  --hot-core:       #ef9d76;
-  --hot-rgb:        239, 157, 118;
-  --neural-hot-rgb: 239, 157, 118;
-  --hot-glow:       rgba(239, 157, 118, 0.16);
+  --hot-core:       #ff2d2d;
+  --hot-rgb:        255, 45, 45;
+  --neural-hot-rgb: 255, 45, 45;
+  --hot-glow:       rgba(255, 45, 45, 0.2);
 
-  /* ─── Violet / intel (soft lavender) ─── */
-  --violet-core:    #a78bfa;
-  --violet-rgb:     167, 139, 250;
-  --neural-violet-rgb: 167, 139, 250;
-  --violet-glow:    rgba(167, 139, 250, 0.15);
-  --intel-violet:   #a78bfa;
-  --intel-soft:     rgba(167, 139, 250, 0.10);
+  --violet-core:    #f5d400;
+  --violet-rgb:     245, 212, 0;
+  --neural-violet-rgb: 245, 212, 0;
+  --violet-glow:    rgba(245, 212, 0, 0.16);
+  --intel-violet:   #f5d400;
+  --intel-soft:     rgba(245, 212, 0, 0.1);
 
-  /* ─── Status (muted pastels) ─── */
-  --status-active:  #55b890;
-  --status-warning: #e2a94f;
-  --status-risk:    #e98aa0;
-  --risk-rgb:       233, 138, 160;
-  --status-idle:    #8d99ab;
+  --status-active:  #3dff6a;
+  --status-warning: #f5d400;
+  --status-risk:    #ff2d2d;
+  --risk-rgb:       255, 45, 45;
+  --status-idle:    #9a9a9a;
 
-  /* ─── Text (soft ink) ─── */
-  --text-primary:   #32415c;
-  --text-secondary: #5e6e89;
-  --text-muted:     #9caabe;
-  --text-neural:    #5c80d9;
+  --text-primary:   #f4f4f4;
+  --text-secondary: #d0d0d0;
+  --text-muted:     #8d8d8d;
+  --text-neural:    #3dff6a;
 
-  /* ─── Borders ─── */
-  --border-subtle:  rgba(50, 65, 92, 0.07);
-  --border-default: rgba(109, 143, 232, 0.22);
-  --border-active:  rgba(109, 143, 232, 0.40);
+  --border-subtle:  rgba(255, 255, 255, 0.14);
+  --border-default: rgba(255, 255, 255, 0.28);
+  --border-active:  rgba(61, 255, 106, 0.7);
 
-  /* ─── Overlays ─── */
-  --overlay-backdrop: rgba(50, 65, 92, 0.25);
+  --overlay-backdrop: rgba(0, 0, 0, 0.72);
 
-  /* ─── Graph (SVG / canvas) ─── */
-  --graph-bg-from:  rgba(109, 143, 232, 0.06);
-  --graph-bg-mid:   rgba(109, 143, 232, 0.02);
-  --graph-link:     rgba(109, 143, 232, 0.18);
-  --graph-link-hot: rgba(109, 143, 232, 0.34);
-  --graph-link-active: rgba(109, 143, 232, 0.62);
-  --graph-node-fill: #ffffff;
-  --graph-grid:     rgba(109, 143, 232, 0.08);
+  --graph-bg-from:  rgba(61, 255, 106, 0.05);
+  --graph-bg-mid:   rgba(0, 0, 0, 0.2);
+  --graph-link:     rgba(61, 255, 106, 0.28);
+  --graph-link-hot: rgba(255, 45, 45, 0.45);
+  --graph-link-active: rgba(61, 255, 106, 0.8);
+  --graph-node-fill: #050505;
+  --graph-grid:     rgba(255, 255, 255, 0.16);
+
+  --machine: #3dff6a;
+  --samaritan: #ff2d2d;
+  --asset: #f5d400;
 }
 
 * {
@@ -80,11 +76,12 @@ body,
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background:
-    radial-gradient(1100px 600px at 15% -10%, rgba(109, 143, 232, 0.07), transparent 60%),
-    radial-gradient(900px 500px at 90% 110%, rgba(167, 139, 250, 0.06), transparent 60%),
-    var(--bg-base);
+  font-family: 'Share Tech Mono', ui-monospace, monospace;
+  background-color: var(--bg-base);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
   background-attachment: fixed;
   color: var(--text-secondary);
   -webkit-font-smoothing: antialiased;
@@ -118,14 +115,15 @@ body {
   .border-active  { border-color: var(--border-active); }
 
   .glass-panel {
-    background: var(--bg-glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-subtle);
-    box-shadow:
-      0 8px 32px rgba(109, 143, 232, 0.10),
-      0 2px 8px rgba(50, 65, 92, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background: #000;
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    box-shadow: none;
+  }
+
+  .hud-title {
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
   }
 
   .neon-ring {
@@ -163,4 +161,29 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--neural-pulse); }
 
 /* ─── Selection ─── */
-::selection { background: rgba(109, 143, 232, 0.20); color: var(--text-primary); }
+::selection { background: rgba(61, 255, 106, 0.28); color: #fff; }
+
+#root .rounded-xl,
+#root .rounded-lg,
+#root .rounded-2xl,
+#root .rounded-md {
+  border-radius: 0;
+}
+
+.hud-viewport {
+  background: #000;
+  border: 3px solid #2a2a2a;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.hud-meter {
+  height: 14px;
+  background: #3a3a3a;
+  border: 1px solid #111;
+}
+
+.hud-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--meter, var(--hot-core));
+}
