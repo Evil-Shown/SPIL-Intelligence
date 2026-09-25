@@ -81,7 +81,7 @@ export async function streamChat(
   message: string,
   options: { conversationId?: string; projectId?: string },
   onDelta: (text: string) => void,
-  onDone: (conversationId: string) => void,
+  onDone: (conversationId: string, turnClass?: string) => void,
   onError: (error: string) => void
 ): Promise<void> {
   const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api/v1';
@@ -121,9 +121,10 @@ export async function streamChat(
           text?: string;
           conversationId?: string;
           message?: string;
+          class?: string;
         };
         if (data.type === 'delta' && data.text) onDelta(data.text);
-        if (data.type === 'done' && data.conversationId) onDone(data.conversationId);
+        if (data.type === 'done' && data.conversationId) onDone(data.conversationId, data.class);
         if (data.type === 'error' && data.message) onError(data.message);
       } catch {
         // skip malformed

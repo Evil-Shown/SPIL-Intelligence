@@ -9,6 +9,7 @@ import * as bugs from '../controllers/bugs.js';
 import * as documents from '../controllers/documents.js';
 import * as dashboard from '../controllers/dashboard.js';
 import * as ai from '../controllers/ai.js';
+import * as auraStatus from '../controllers/auraStatus.js';
 
 const router = Router();
 
@@ -55,6 +56,7 @@ router.put('/documents/:id', documents.updateDocument);
 router.get('/dashboard/stats', dashboard.getDashboardStats);
 router.get('/dashboard/activity', dashboard.getDashboardActivity);
 
+router.get('/aura/status', auraStatus.getAuraStatus);
 router.post('/ai/chat', ai.chat);
 router.get('/ai/conversations', ai.getConversations);
 router.post('/ai/conversations', ai.createConversation);

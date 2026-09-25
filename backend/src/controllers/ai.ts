@@ -159,7 +159,7 @@ export async function chat(req: Request, res: Response): Promise<void> {
     });
 
     res.write(
-      `data: ${JSON.stringify({ type: 'done', conversationId: conversation.id })}\n\n`
+      `data: ${JSON.stringify({ type: 'done', conversationId: conversation.id, class: 'read' })}\n\n`
     );
     res.end();
   } catch (err) {
