@@ -128,7 +128,7 @@ export function Sidebar() {
                   onClick={() => setSidebarMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
-                      'group mb-0.5 flex items-center gap-3 rounded-none px-3 py-2.5 text-sm uppercase tracking-wide transition-all duration-150',
+                      'group mb-0.5 flex items-center gap-3 rounded-none px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.14em] transition-all duration-150',
                       'text-muted hover:bg-elevated hover:text-primary',
                       isActive && 'bg-neural-trace text-neural border-l-2 border-neural-core shadow-[inset_0_0_12px_var(--neural-trace)]',
                       sidebarCollapsed && 'justify-center px-2'

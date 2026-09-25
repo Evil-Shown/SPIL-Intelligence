@@ -13,10 +13,9 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Section } from '../components/hud/Section';
 import { tasksApi } from '../services/endpoints';
 import { formatDate } from '../lib/utils';
 import type { Task, TaskStatus } from '../types';
@@ -33,9 +32,9 @@ function Column({ status, label, children }: { status: TaskStatus; label: string
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-[200px] rounded-xl p-3 transition-colors ${isOver ? 'bg-neural-trace' : 'bg-elevated/50'}`}
+      className={`min-h-[120px] border-t border-black/15 pt-3 ${isOver ? 'bg-black/[0.03]' : ''}`}
     >
-      <h3 className="mb-3 text-sm font-medium text-primary">{label}</h3>
+      <h3 className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-black/45">{label}</h3>
       <div className="space-y-3">{children}</div>
     </div>
   );
@@ -55,19 +54,16 @@ function TaskCard({ task, isDragging }: { task: Task; isDragging?: boolean }) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className="cursor-grab !p-4 active:cursor-grabbing">
-        <h4 className="mb-2 text-sm font-medium text-primary">{task.title}</h4>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-          <Badge variant={task.priority === 'HIGH' || task.priority === 'CRITICAL' ? 'risk' : 'warning'}>
-            {task.priority}
-          </Badge>
-          {task.module && <span className="font-mono">{task.module}</span>}
+      <div className="cursor-grab border-b border-black/10 py-4 active:cursor-grabbing">
+        <div className="flex items-baseline justify-between gap-4">
+          <h4 className="text-sm font-medium text-black">{task.title}</h4>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-black/55">{task.priority}</span>
         </div>
-        <div className="mt-2 text-xs text-muted">
-          {task.assignee && <span>{task.assignee}</span>}
-          {task.dueDate && <span> · Due {formatDate(task.dueDate)}</span>}
-        </div>
-      </Card>
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-black/40">
+          {task.assignee ?? 'Unassigned'}
+          {task.dueDate ? ` · ${formatDate(task.dueDate)}` : ''}
+        </p>
+      </div>
     </div>
   );
 }
@@ -111,8 +107,7 @@ export function Tasks() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-primary">Tasks</h1>
+    <Section kicker="Work" title="TASKS">
 
       {isLoading ? (
         <div className="grid grid-cols-3 gap-4">
@@ -143,6 +138,6 @@ export function Tasks() {
           </DragOverlay>
         </DndContext>
       )}
-    </div>
+    </Section>
   );
 }

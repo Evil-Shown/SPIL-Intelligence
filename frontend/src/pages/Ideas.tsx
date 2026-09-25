@@ -1,23 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Lightbulb } from 'lucide-react';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
+import { Section, Register } from '../components/hud/Section';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { StarRating } from '../components/modules/StarRating';
 import { ideasApi } from '../services/endpoints';
-import { containerVariants } from '../lib/constants';
-import type { Priority } from '../types';
-
-const priorityVariant: Record<Priority, 'risk' | 'warning' | 'draft'> = {
-  CRITICAL: 'risk',
-  HIGH: 'risk',
-  MEDIUM: 'warning',
-  LOW: 'draft',
-};
 
 export function Ideas() {
   const navigate = useNavigate();
@@ -51,8 +38,7 @@ export function Ideas() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-primary">Ideas Board</h1>
+    <Section kicker="Engineering" title="IDEAS">
 
       {isLoading ? (
         <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
@@ -64,50 +50,35 @@ export function Ideas() {
         </div>
       ) : !ideas?.length ? (
         <EmptyState
-          icon={<Lightbulb size={24} />}
           title="No ideas yet"
           description="Capture innovative ideas for the SPIL Opti workspace."
         />
       ) : (
-        <motion.div
-          variants={containerVariants}
-          initial="initial"
-          animate="animate"
-          className="columns-1 gap-4 md:columns-2 xl:columns-3"
-        >
+        <Register>
           {ideas.map((idea) => (
-            <div key={idea.id} className="mb-4 break-inside-avoid">
-              <Card>
-                <div className="mb-2 flex items-center gap-2">
-                  <span>💡</span>
-                  <h3 className="font-semibold text-primary">{idea.title}</h3>
-                </div>
-                <div className="mb-3 flex items-center gap-3">
-                  <StarRating
-                    rating={idea.rating}
-                    onChange={(rating) => ratingMutation.mutate({ id: idea.id, rating })}
-                  />
-                  <Badge variant={priorityVariant[idea.priority]}>
-                    Priority: {idea.priority}
-                  </Badge>
-                </div>
-                <p className="mb-4 text-sm text-secondary">{idea.description}</p>
-                <div className="flex items-center justify-between">
-                  <Badge variant="draft">{idea.status}</Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => promoteMutation.mutate(idea.id)}
-                    disabled={promoteMutation.isPending}
-                  >
-                    Promote to Project →
-                  </Button>
-                </div>
-              </Card>
+            <div key={idea.id} className="border-b border-black/10 py-5">
+              <div className="flex items-baseline justify-between gap-6">
+                <h2 className="font-display text-lg tracking-wide text-black">{idea.title}</h2>
+                <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-black/70">
+                  {idea.priority}
+                </span>
+              </div>
+              {idea.description && <p className="mt-1 max-w-xl text-sm text-black/55">{idea.description}</p>}
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <StarRating rating={idea.rating} onChange={(rating) => ratingMutation.mutate({ id: idea.id, rating })} />
+                <button
+                  type="button"
+                  onClick={() => promoteMutation.mutate(idea.id)}
+                  disabled={promoteMutation.isPending}
+                  className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d10505] disabled:opacity-40"
+                >
+                  Promote
+                </button>
+              </div>
             </div>
           ))}
-        </motion.div>
+        </Register>
       )}
-    </div>
+    </Section>
   );
 }

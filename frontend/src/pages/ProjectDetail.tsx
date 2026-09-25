@@ -117,14 +117,12 @@ export function ProjectDetail() {
       )}
 
       {activeTab === 'Tasks' && (
-        <div className="space-y-2">
+        <div className="border-t border-black/10">
           {project.tasks?.map((t) => (
-            <Card key={t.id} className="!py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-primary">{t.title}</span>
-                <Badge variant={t.priority === 'HIGH' ? 'risk' : 'draft'}>{t.status}</Badge>
-              </div>
-            </Card>
+            <div key={t.id} className="flex items-baseline justify-between gap-4 border-b border-black/10 py-4">
+              <span className="text-sm text-black">{t.title}</span>
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-black/55">{t.status}</span>
+            </div>
           ))}
         </div>
       )}

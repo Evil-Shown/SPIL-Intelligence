@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Files } from 'lucide-react';
-import { Card } from '../components/ui/Card';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SidePanel } from '../components/modules/SidePanel';
+import { Section } from '../components/hud/Section';
 import { documentsApi } from '../services/endpoints';
 import { formatRelativeTime } from '../lib/utils';
 import type { Document } from '../types';
@@ -18,8 +17,7 @@ export function Documents() {
   });
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-primary">Documents</h1>
+    <Section kicker="Work" title="DOCUMENTS">
 
       {error ? (
         <EmptyState title="Failed to load documents" description={error.message} actionLabel="Retry" onAction={() => refetch()} />
@@ -30,22 +28,24 @@ export function Documents() {
           ))}
         </div>
       ) : !documents?.length ? (
-        <EmptyState icon={<Files size={24} />} title="No documents" description="Project documentation will be stored here." />
+        <EmptyState title="No documents" description="Project documentation will be stored here." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="border-t border-black/15">
           {documents.map((doc) => (
-            <Card key={doc.id} hover className="cursor-pointer" onClick={() => setSelected(doc)}>
-              <h3 className="mb-2 font-medium text-primary">{doc.title}</h3>
-              <p className="mb-3 text-sm text-muted line-clamp-2">{doc.content}</p>
-              <div className="flex items-center justify-between text-xs text-muted">
-                <div className="flex gap-1">
-                  {doc.tags.map((tag) => (
-                    <span key={tag} className="rounded bg-elevated px-1.5 py-0.5 font-mono">{tag}</span>
-                  ))}
-                </div>
-                <span>{formatRelativeTime(doc.updatedAt)}</span>
+            <button
+              key={doc.id}
+              type="button"
+              onClick={() => setSelected(doc)}
+              className="block w-full border-b border-black/10 py-5 text-left"
+            >
+              <div className="flex items-baseline justify-between gap-6">
+                <h2 className="font-display text-lg tracking-wide text-black">{doc.title}</h2>
+                <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-black/55">
+                  {formatRelativeTime(doc.updatedAt)}
+                </span>
               </div>
-            </Card>
+              <p className="mt-1 line-clamp-2 max-w-xl text-sm text-black/55">{doc.content}</p>
+            </button>
           ))}
         </div>
       )}
@@ -57,6 +57,6 @@ export function Documents() {
           </div>
         )}
       </SidePanel>
-    </div>
+    </Section>
   );
 }

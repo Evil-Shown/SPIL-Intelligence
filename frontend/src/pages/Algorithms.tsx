@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Section } from '../components/hud/Section';
 import { algorithmsApi } from '../services/endpoints';
 import { cn } from '../lib/utils';
 import type { Algorithm } from '../types';
@@ -28,8 +28,7 @@ export function Algorithms() {
   const categoryItems = algorithms?.filter((a) => a.category === selectedCategory) ?? [];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-primary">Algorithms Library</h1>
+    <Section kicker="Engineering" title="ALGORITHMS">
 
       <div className="flex gap-6">
         <aside className="hidden w-56 shrink-0 lg:block">
@@ -109,30 +108,31 @@ export function Algorithms() {
               )}
             </Card>
           ) : (
-            <div className="grid gap-3">
+            <div className="border-t border-black/15">
               {categoryItems.length === 0 ? (
                 <EmptyState
-                  icon={<BookOpen size={24} />}
                   title={`No algorithms in ${selectedCategory}`}
                   description="Algorithms will appear here as they are documented."
                 />
               ) : (
                 categoryItems.map((algo) => (
-                  <Card key={algo.id} hover className="cursor-pointer !py-4" onClick={() => setSelected(algo)}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-primary">{algo.name}</h3>
-                        <p className="text-xs text-muted">{algo.complexity}</p>
-                      </div>
-                      <Badge variant="active">Implemented</Badge>
-                    </div>
-                  </Card>
+                  <button
+                    key={algo.id}
+                    type="button"
+                    onClick={() => setSelected(algo)}
+                    className="flex w-full items-baseline justify-between gap-4 border-b border-black/10 py-5 text-left"
+                  >
+                    <span className="font-display text-lg tracking-wide text-black">{algo.name}</span>
+                    <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-black/55">
+                      {algo.complexity ?? 'Noted'}
+                    </span>
+                  </button>
                 ))
               )}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </Section>
   );
 }

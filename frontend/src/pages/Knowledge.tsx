@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Brain } from 'lucide-react';
-import { Card } from '../components/ui/Card';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Register, RegisterRow, Section } from '../components/hud/Section';
 import { documentsApi, projectsApi, algorithmsApi, decisionsApi } from '../services/endpoints';
 import { formatRelativeTime } from '../lib/utils';
 
@@ -29,71 +28,33 @@ export function Knowledge() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-primary">Knowledge Base</h1>
-        <p className="mt-1 text-sm text-muted">
-          Central intelligence layer for SPIL Opti — documentation, algorithms, and decisions.
+    <Section
+      kicker="Workspace"
+      title="KNOWLEDGE"
+      action={
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-black/60">
+          {documents?.length ?? 0} docs · {algorithms?.length ?? 0} algorithms · {decisions?.length ?? 0} decisions
         </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          { label: 'Documents', value: documents?.length ?? 0, icon: '📄' },
-          { label: 'Algorithms', value: algorithms?.length ?? 0, icon: '📚' },
-          { label: 'ADRs', value: decisions?.length ?? 0, icon: '📝' },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{stat.icon}</span>
-              <div>
-                <p className="font-mono text-2xl font-bold text-primary">{stat.value}</p>
-                <p className="text-xs text-muted">{stat.label}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <h3 className="mb-4 font-semibold text-primary">Documentation</h3>
-          {docsLoading ? (
-            <CardSkeleton />
-          ) : !documents?.length ? (
-            <EmptyState icon={<Brain size={20} />} title="No documents" description="Project documentation will appear here." />
-          ) : (
-            <div className="space-y-2">
-              {documents.map((doc) => (
-                <Link
-                  key={doc.id}
-                  to="/documents"
-                  className="flex items-center justify-between rounded-lg border border-subtle px-3 py-2.5 transition-colors hover:border-active hover:bg-overlay"
-                >
-                  <span className="text-sm text-primary">{doc.title}</span>
-                  <span className="text-xs text-muted">{formatRelativeTime(doc.updatedAt)}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <Card>
-          <h3 className="mb-4 font-semibold text-primary">Projects</h3>
-          <div className="space-y-2">
-            {projects?.map((p) => (
-              <Link
-                key={p.id}
-                to={`/projects/${p.id}`}
-                className="flex items-center justify-between rounded-lg border border-subtle px-3 py-2.5 transition-colors hover:border-active hover:bg-overlay"
-              >
-                <span className="text-sm text-primary">{p.name}</span>
-                <span className="font-mono text-xs text-neural">{p.progress}%</span>
-              </Link>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </div>
+      }
+    >
+      {docsLoading ? (
+        <CardSkeleton />
+      ) : !documents?.length ? (
+        <EmptyState title="No documents" description="Project documentation will appear here." />
+      ) : (
+        <Register>
+          {documents.map((doc) => (
+            <Link key={doc.id} to="/documents" className="block">
+              <RegisterRow title={doc.title} meta={formatRelativeTime(doc.updatedAt)} />
+            </Link>
+          ))}
+          {projects?.map((project) => (
+            <Link key={project.id} to={`/projects/${project.id}`} className="block">
+              <RegisterRow title={project.name} meta={`${project.progress}%`} detail="Project" />
+            </Link>
+          ))}
+        </Register>
+      )}
+    </Section>
   );
 }

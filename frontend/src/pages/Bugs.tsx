@@ -5,6 +5,7 @@ import { Badge } from '../components/ui/Badge';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SidePanel } from '../components/modules/SidePanel';
+import { Section } from '../components/hud/Section';
 import { bugsApi } from '../services/endpoints';
 import { formatDate, cn } from '../lib/utils';
 import type { Bug as BugType, BugStatus, Severity } from '../types';
@@ -35,23 +36,26 @@ export function Bugs() {
   const filtered = bugs?.filter((b) => severityFilter === 'ALL' || b.severity === severityFilter);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-primary">Bugs</h1>
-
-      <div className="flex flex-wrap gap-2">
-        {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSeverityFilter(s)}
-            className={cn(
-              'rounded-lg border px-3 py-1.5 text-xs transition-colors',
-              severityFilter === s ? 'border-active bg-overlay text-neural' : 'border-subtle text-muted'
-            )}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+    <Section
+      kicker="Work"
+      title="BUGS"
+      action={
+        <div className="flex flex-wrap gap-3">
+          {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSeverityFilter(s)}
+              className={cn(
+                'font-mono text-[11px] font-semibold uppercase tracking-[0.14em]',
+                severityFilter === s ? 'text-[#d10505]' : 'text-black/45 hover:text-black'
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      }
+    >
 
       {error ? (
         <EmptyState title="Failed to load bugs" description={error.message} actionLabel="Retry" onAction={() => refetch()} />
@@ -60,37 +64,20 @@ export function Bugs() {
       ) : !filtered?.length ? (
         <EmptyState icon={<Bug size={24} />} title="No bugs found" description="No bugs match the current filter." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-subtle">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-subtle bg-elevated text-left">
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">ID</th>
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">Title</th>
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">Severity</th>
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">Module</th>
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">Status</th>
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">Assigned</th>
-                <th className="px-4 py-3 font-mono text-xs uppercase text-muted">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((bug) => (
-                <tr
-                  key={bug.id}
-                  onClick={() => setSelected(bug)}
-                  className="cursor-pointer border-b border-subtle transition-colors hover:bg-overlay"
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-muted">{bug.id.slice(0, 8)}</td>
-                  <td className="px-4 py-3 text-primary">{bug.title}</td>
-                  <td className="px-4 py-3"><Badge variant={severityVariant[bug.severity]}>{bug.severity}</Badge></td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted">{bug.module}</td>
-                  <td className="px-4 py-3"><Badge variant={statusVariant[bug.status]}>{bug.status.replace('_', ' ')}</Badge></td>
-                  <td className="px-4 py-3 text-secondary">{bug.assignee}</td>
-                  <td className="px-4 py-3 text-muted">{formatDate(bug.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="border-t border-black/15">
+          {filtered.map((bug) => (
+            <button
+              key={bug.id}
+              type="button"
+              onClick={() => setSelected(bug)}
+              className="flex w-full items-baseline justify-between gap-4 border-b border-black/10 py-5 text-left"
+            >
+              <span className="font-display text-lg tracking-wide text-black">{bug.title}</span>
+              <span className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-black/70">
+                {bug.severity} · {bug.status.replace('_', ' ')}
+              </span>
+            </button>
+          ))}
         </div>
       )}
 
@@ -117,6 +104,6 @@ export function Bugs() {
           </div>
         )}
       </SidePanel>
-    </div>
+    </Section>
   );
 }

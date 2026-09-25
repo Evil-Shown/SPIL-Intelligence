@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SidePanel } from '../components/modules/SidePanel';
+import { Section } from '../components/hud/Section';
 import { researchApi } from '../services/endpoints';
 import { formatDate } from '../lib/utils';
 import type { Research, ResearchStatus } from '../types';
@@ -68,8 +66,7 @@ export function ResearchPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-primary">Research</h1>
+    <Section kicker="Engineering" title="RESEARCH">
 
       {isLoading ? (
         <div className="grid grid-cols-5 gap-4">
@@ -78,47 +75,34 @@ export function ResearchPage() {
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {columns.map((col) => (
-            <div key={col.status} className="min-w-[260px] flex-1">
-              <div className="mb-3 flex items-center gap-2">
-                <span>{col.icon}</span>
-                <span className="text-sm font-medium text-primary">{col.label}</span>
-                <span className="font-mono text-xs text-muted">
-                  {items?.filter((i) => i.status === col.status).length ?? 0}
-                </span>
+        <div className="border-t border-black/15">
+          {columns.map((col) => {
+            const group = items?.filter((item) => item.status === col.status) ?? [];
+            if (!group.length) return null;
+            return (
+              <div key={col.status}>
+                <p className="pt-6 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-black/40">
+                  {col.label}
+                </p>
+                {group.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => openPanel(item)}
+                    className="block w-full border-b border-black/10 py-5 text-left"
+                  >
+                    <div className="flex items-baseline justify-between gap-6">
+                      <h2 className="font-display text-lg tracking-wide text-black">{item.title}</h2>
+                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-black/55">
+                        {formatDate(item.updatedAt)}
+                      </span>
+                    </div>
+                    {item.problem && <p className="mt-1 line-clamp-2 max-w-xl text-sm text-black/55">{item.problem}</p>}
+                  </button>
+                ))}
               </div>
-              <div className="space-y-3">
-                {items
-                  ?.filter((i) => i.status === col.status)
-                  .map((item) => (
-                    <motion.div key={item.id} whileHover={{ scale: 1.01 }}>
-                      <Card
-                        hover
-                        className="cursor-pointer !p-4"
-                        onClick={() => openPanel(item)}
-                      >
-                        <h3 className="mb-2 text-sm font-semibold text-primary">{item.title}</h3>
-                        <div className="mb-2 flex flex-wrap gap-1">
-                          {item.tags.map((tag) => (
-                            <span key={tag} className="font-mono text-[10px] uppercase text-muted">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                        {item.problem && (
-                          <p className="mb-3 text-xs text-muted line-clamp-3">{item.problem}</p>
-                        )}
-                        <div className="flex items-center justify-between text-xs text-muted">
-                          <Badge variant="draft">{item.status}</Badge>
-                          <span>{formatDate(item.updatedAt)}</span>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -146,6 +130,6 @@ export function ResearchPage() {
           </div>
         )}
       </SidePanel>
-    </div>
+    </Section>
   );
 }
