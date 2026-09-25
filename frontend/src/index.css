@@ -178,8 +178,36 @@ body {
 }
 
 @keyframes data-drift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-50%); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -50%, 0); }
+}
+
+@keyframes signal-load {
+  0% { width: 18%; opacity: 0.55; }
+  55% { width: 68%; opacity: 1; }
+  100% { width: 18%; opacity: 0.55; }
+}
+
+.signal-load {
+  animation: signal-load 3.6s ease-in-out infinite;
+}
+
+@keyframes lamp {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.28; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rise-in {
+  animation: rise-in 0.9s ease both;
+}
+
+.lamp {
+  animation: lamp 2.4s ease-in-out infinite;
 }
 
 .data-drift {
@@ -197,7 +225,10 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .data-drift,
-  .caret-blink {
+  .caret-blink,
+  .signal-load,
+  .lamp,
+  .rise-in {
     animation: none;
   }
 }
