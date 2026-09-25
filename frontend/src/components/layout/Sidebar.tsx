@@ -78,8 +78,8 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 flex h-full flex-col border-r-2 border-white/20 transition-all duration-300',
-          'bg-black',
+          'fixed left-0 top-0 z-40 flex h-full flex-col border-r border-black/10 transition-all duration-300',
+          'bg-white',
           sidebarCollapsed ? 'w-16' : 'w-60',
           sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
@@ -103,7 +103,7 @@ export function Sidebar() {
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <div className="hud-title text-sm text-[var(--machine)]">{APP_NAME}</div>
+              <div className="hud-title text-sm text-[var(--samaritan)]">{APP_NAME}</div>
               <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/50">
                 {WORKSPACE_NAME}
               </div>
@@ -160,7 +160,7 @@ export function Sidebar() {
         {/* User */}
         <div className="border-t border-subtle p-3">
           {!sidebarCollapsed ? (
-            <div className="flex items-center gap-3 border-2 border-white/20 bg-black p-3">
+            <div className="flex items-center gap-3 border border-black/10 bg-[#fafafa] p-3">
               <div
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-active/40 font-mono text-xs font-bold text-neural"
                 style={{ background: 'radial-gradient(circle, var(--neural-trace), var(--bg-elevated))' }}

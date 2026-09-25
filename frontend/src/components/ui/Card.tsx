@@ -13,8 +13,8 @@ export function Card({ className, hover = true, active = false, glow = 'none', c
     <motion.div
       variants={cardVariants}
       className={cn(
-        'rounded-none border-2 border-white/25 bg-black p-5 transition-all duration-200',
-        hover && 'hover:border-[var(--machine)] hover:bg-black',
+        'rounded-none border border-black/10 bg-white p-5 shadow-sm transition-all duration-200',
+        hover && 'hover:border-[var(--samaritan)]/40 hover:shadow-md',
         active && 'border-l-2 border-l-neural-core bg-overlay',
         glow === 'neural' && 'shadow-neural border-active',
         glow === 'hot'    && 'shadow-hot border-[var(--hot-core)]/30',

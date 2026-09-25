@@ -6,7 +6,7 @@ import { PageWrapper } from './PageWrapper';
 
 export function AppLayout() {
   return (
-    <div className="relative min-h-screen bg-black">
+    <div className="relative min-h-screen bg-[#efefef]">
       <NeuralCanvas />
       {/* Grid dot overlay */}
       <div

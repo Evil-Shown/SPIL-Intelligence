@@ -13,13 +13,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        'border-2 border-[var(--machine)] bg-black text-[var(--machine)] hover:bg-[var(--machine)] hover:text-black',
+        'border border-[var(--samaritan)] bg-white text-[var(--samaritan)] hover:bg-[var(--samaritan)] hover:text-white',
       ghost:
-        'bg-black border-2 border-white/30 text-secondary hover:border-white hover:text-white',
+        'bg-white border border-black/15 text-secondary hover:border-black/40 hover:text-primary',
       danger:
-        'bg-black border-2 border-[var(--samaritan)] text-[var(--samaritan)] hover:bg-[var(--samaritan)] hover:text-black',
+        'bg-white border border-[var(--samaritan)] text-[var(--samaritan)] hover:bg-[var(--samaritan)] hover:text-white',
       hot:
-        'bg-black border-2 border-[var(--asset)] text-[var(--asset)] hover:bg-[var(--asset)] hover:text-black',
+        'bg-white border border-[var(--asset)] text-[var(--asset)] hover:bg-[var(--asset)] hover:text-white',
     };
 
     const sizes = {

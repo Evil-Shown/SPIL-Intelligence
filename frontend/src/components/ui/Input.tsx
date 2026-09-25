@@ -18,8 +18,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={id}
           className={cn(
-            'w-full rounded-none border-2 border-white/25 bg-black px-3 py-2 text-sm text-primary',
-            'placeholder:text-muted focus:border-[var(--machine)] focus:outline-none',
+            'w-full rounded-none border border-black/15 bg-white px-3 py-2 text-sm text-primary',
+            'placeholder:text-muted focus:border-[var(--samaritan)] focus:outline-none',
             'transition-all duration-150',
             className
           )}
