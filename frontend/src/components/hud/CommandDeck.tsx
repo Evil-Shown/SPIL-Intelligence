@@ -105,7 +105,7 @@ export function CommandDeck() {
             onChange={(event) => setCommand(event.target.value)}
             placeholder="Ask the company brain"
             aria-label="Command"
-            className="mt-6 w-full border-0 border-b border-transparent bg-transparent pb-1 text-center font-mono text-[11px] uppercase tracking-[0.32em] text-black/75 outline-none transition-colors placeholder:text-black/20 focus:border-black/25"
+            className="mt-6 w-full border-0 border-b border-transparent bg-transparent pb-1 text-center font-mono text-[12px] font-semibold uppercase tracking-[0.28em] text-black outline-none transition-colors placeholder:text-black/45 focus:border-black/40"
           />
         </form>
 
@@ -128,17 +128,17 @@ export function CommandDeck() {
           </div>
         </div>
 
-        <nav className="mt-9 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-2 font-mono text-[10px] uppercase tracking-[0.24em] text-black/35">
+        <nav className="mt-9 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-3 font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-black/80">
           {links.map((link, index) => (
             <span key={link.to} className="flex items-center gap-3">
-              {index > 0 && <span className="text-black/15">/</span>}
-              <Link to={link.to} className="transition-colors hover:text-black">
+              {index > 0 && <span className="font-normal text-black/35">/</span>}
+              <Link to={link.to} className="transition-colors hover:text-[#d10505]">
                 {link.label}
               </Link>
             </span>
           ))}
-          <span className="text-black/15">/</span>
-          <button type="button" onClick={() => setShowMap((open) => !open)} className="transition-colors hover:text-black">
+          <span className="font-normal text-black/35">/</span>
+          <button type="button" onClick={() => setShowMap((open) => !open)} className="font-semibold transition-colors hover:text-[#d10505]">
             {showMap ? 'Close map' : 'Map'}
           </button>
         </nav>

@@ -74,22 +74,24 @@ export function ProjectDetail() {
     );
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-primary">{project.name}</h1>
-        <p className="mt-1 text-sm text-muted">{project.description}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-black/40">{project.team}</p>
+        <h1 className="font-display mt-2 text-3xl font-medium tracking-[0.12em] text-black">{project.name}</h1>
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-black/55">{project.description}</p>
+        <p className="mt-3 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-black/70">
+          {project.status} · {project.progress}% · {formatRelativeTime(project.updatedAt)}
+        </p>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-subtle">
+      <div className="flex gap-4 overflow-x-auto border-b border-black/10">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
-              'whitespace-nowrap px-4 py-2.5 text-sm transition-colors',
-              activeTab === tab
-                ? 'border-b-2 border-neural-core text-neural'
-                : 'text-muted hover:text-primary'
+              'whitespace-nowrap pb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em]',
+              activeTab === tab ? 'border-b-2 border-[#d10505] text-black' : 'text-black/40 hover:text-black'
             )}
           >
             {tab}
@@ -98,45 +100,19 @@ export function ProjectDetail() {
       </div>
 
       {activeTab === 'Overview' && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <Card>
-              <h3 className="mb-3 font-semibold text-primary">Description</h3>
-              <p className="text-sm leading-relaxed text-secondary">{project.description}</p>
-            </Card>
-            <Card>
-              <h3 className="mb-3 font-semibold text-primary">Recent Activity</h3>
-              <div className="space-y-2 text-sm text-secondary">
-                {project.tasks?.slice(0, 3).map((t) => (
-                  <p key={t.id}>Task: {t.title} — {t.status}</p>
-                ))}
-                {project.bugs?.slice(0, 2).map((b) => (
-                  <p key={b.id}>Bug: {b.title} — {b.status}</p>
-                ))}
-              </div>
-            </Card>
-          </div>
-          <Card>
-            <h3 className="mb-4 font-semibold text-primary">Meta</h3>
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="text-xs uppercase text-muted">Status</dt>
-                <dd><Badge variant="active">{project.status}</Badge></dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase text-muted">Team</dt>
-                <dd className="text-secondary">{project.team}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase text-muted">Progress</dt>
-                <dd className="font-mono text-neural">{project.progress}%</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase text-muted">Updated</dt>
-                <dd className="text-secondary">{formatRelativeTime(project.updatedAt)}</dd>
-              </div>
-            </dl>
-          </Card>
+        <div className="border-t border-black/10">
+          {project.tasks?.slice(0, 4).map((t) => (
+            <div key={t.id} className="flex items-baseline justify-between gap-4 border-b border-black/10 py-3">
+              <span className="text-sm text-black">{t.title}</span>
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{t.status}</span>
+            </div>
+          ))}
+          {project.bugs?.slice(0, 3).map((b) => (
+            <div key={b.id} className="flex items-baseline justify-between gap-4 border-b border-black/10 py-3">
+              <span className="text-sm text-black">{b.title}</span>
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#d10505]">{b.status}</span>
+            </div>
+          ))}
         </div>
       )}
 

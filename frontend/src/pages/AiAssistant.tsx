@@ -155,8 +155,8 @@ export function AiAssistant() {
         {idle ? (
           <div className="rise-in my-auto flex w-full max-w-lg flex-col items-center pb-10 text-center">
             <div className="h-px w-[min(100%,380px)] bg-black" />
-            <p className="font-display my-[14px] text-[12px] font-medium uppercase tracking-[0.5em] sm:text-[14px]">
-              What are your commands?
+            <p className="font-display my-[14px] text-[12px] font-medium lowercase tracking-[0.42em] sm:text-[14px]">
+              what are your commands?
             </p>
             <div className="h-px w-[min(100%,380px)] bg-black" />
             <div className="mt-3.5 h-0 w-0 border-x-[6px] border-x-transparent border-b-[9px] border-b-[#d10505]" />
@@ -165,28 +165,29 @@ export function AiAssistant() {
           <div className="my-auto w-full max-w-[640px] space-y-6 py-10">
             {messages.map((message, index) =>
               message.role === 'USER' ? (
-                <p key={index} className="text-center font-display text-[13px] uppercase tracking-[0.28em]">
-                  {message.content}
+                <p key={index} className="text-center font-mono text-[12px] lowercase tracking-[0.18em] text-black/80">
+                  &gt; {message.content}
                 </p>
               ) : (
                 <div key={index} className="border border-black/90 bg-white shadow-[0_18px_50px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center justify-between border-b border-black/90 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.26em]">
-                    <span>Company brain</span>
+                    <span className="lowercase tracking-[0.2em]">aura · herald</span>
                     <span className="flex gap-[5px]">
                       <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" />
                       <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" style={{ animationDelay: '1.1s' }} />
                     </span>
                   </div>
-                  <div className="bg-[#0a0a0a] px-4 py-4 font-mono text-[12px] leading-relaxed tracking-wide text-white/90">
+                  <div className="bg-[#0a0a0a] px-4 py-4 font-mono text-[12px] lowercase leading-relaxed tracking-wide text-[#e7e1d6] [&_p]:my-1 [&_strong]:text-white">
                     {message.content ? (
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                     ) : (
                       <span>
-                        Reading
+                        reading
                         <span className="caret-blink">_</span>
                       </span>
                     )}
                     {streaming && index === messages.length - 1 && message.content && <span className="caret-blink">_</span>}
+                    {!streaming && message.content && <p className="pt-2 text-[#f5c16c]">awaiting.</p>}
                   </div>
                 </div>
               )
@@ -201,7 +202,7 @@ export function AiAssistant() {
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask the company brain"
+            placeholder="can you hear me?"
             disabled={streaming}
             className="w-full bg-transparent px-3.5 py-3 font-mono text-[11px] uppercase tracking-[0.22em] outline-none placeholder:text-black/25 disabled:opacity-40"
           />
