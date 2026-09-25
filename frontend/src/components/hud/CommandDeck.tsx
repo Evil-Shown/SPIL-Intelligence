@@ -78,51 +78,57 @@ export function CommandDeck() {
   };
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[#f4f4f4]">
+    <div className="relative flex h-full flex-col overflow-hidden bg-[#f7f7f7]">
       <DataField />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse at center, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.72) 28%, rgba(255,255,255,0.15) 58%, rgba(255,255,255,0) 100%)',
+            'radial-gradient(ellipse at center, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.88) 22%, rgba(255,255,255,0.35) 48%, rgba(190,190,190,0.28) 100%)',
         }}
       />
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
+      <div className="pointer-events-none absolute left-0 right-0 top-7 z-10 text-center font-display text-[11px] uppercase tracking-[0.62em] text-black/25">
+        SPIL
+      </div>
+
+      <div className="rise-in relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-6">
         <form onSubmit={submit} className="flex w-full max-w-lg flex-col items-center text-center">
-          <div className="h-px w-[min(100%,420px)] bg-black/80" />
-          <label className="font-display my-3 block text-[13px] font-medium uppercase tracking-[0.46em] text-black sm:text-[15px]">
+          <div className="h-px w-[min(100%,380px)] bg-black" />
+          <label className="font-display my-[14px] block text-[12px] font-medium uppercase tracking-[0.5em] text-black sm:text-[14px]">
             What are your commands?
           </label>
-          <div className="h-px w-[min(100%,420px)] bg-black/80" />
-          <div className="mt-3 h-0 w-0 border-x-[7px] border-x-transparent border-b-[10px] border-b-[#e10600]" />
+          <div className="h-px w-[min(100%,380px)] bg-black" />
+          <div className="mt-3.5 h-0 w-0 border-x-[6px] border-x-transparent border-b-[9px] border-b-[#d10505] drop-shadow-[0_1px_0_rgba(209,5,5,0.25)]" />
           <input
             value={command}
             onChange={(event) => setCommand(event.target.value)}
             placeholder="Ask the company brain"
             aria-label="Command"
-            className="mt-5 w-full border-0 bg-transparent text-center font-mono text-[11px] uppercase tracking-[0.28em] text-black/80 outline-none placeholder:text-black/25"
+            className="mt-6 w-full border-0 border-b border-transparent bg-transparent pb-1 text-center font-mono text-[11px] uppercase tracking-[0.32em] text-black/75 outline-none transition-colors placeholder:text-black/20 focus:border-black/25"
           />
         </form>
 
-        <div className="mt-9 w-full max-w-[440px] border border-black bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
-          <div className="flex items-center justify-between border-b border-black px-3 py-[7px] font-mono text-[10px] uppercase tracking-[0.28em] text-black">
+        <div className="mt-10 w-full max-w-[420px] border border-black/90 bg-white shadow-[0_24px_60px_rgba(0,0,0,0.07)]">
+          <div className="flex items-center justify-between border-b border-black/90 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.26em] text-black">
             <span>Company brain online</span>
-            <span className="flex gap-1">
-              <i className="lamp block h-[7px] w-[7px] bg-[#e10600]" />
-              <i className="lamp block h-[7px] w-[7px] bg-[#e10600]" style={{ animationDelay: '0.8s' }} />
+            <span className="flex gap-[5px]">
+              <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" />
+              <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" style={{ animationDelay: '1.1s' }} />
             </span>
           </div>
-          <div className="bg-black px-3 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-white">
+          <div className="bg-[#0a0a0a] px-3.5 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-white/95">
             <div>
               Reading workspace
-              <span className="caret-blink">_</span>
+              <span className="caret-blink text-white">_</span>
             </div>
-            <div className="signal-load mt-2.5 h-[3px] bg-white" />
+            <div className="mt-3 h-px w-full bg-white/15">
+              <div className="signal-load h-px bg-white" />
+            </div>
           </div>
         </div>
 
-        <nav className="mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-2 font-mono text-[10px] uppercase tracking-[0.22em] text-black/40">
+        <nav className="mt-9 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-2 font-mono text-[10px] uppercase tracking-[0.24em] text-black/35">
           {links.map((link, index) => (
             <span key={link.to} className="flex items-center gap-3">
               {index > 0 && <span className="text-black/15">/</span>}
