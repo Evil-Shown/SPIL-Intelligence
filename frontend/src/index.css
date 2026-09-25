@@ -76,11 +76,8 @@ body,
 
 body {
   font-family: 'Share Tech Mono', ui-monospace, monospace;
-  background-color: #efefef;
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
+  background-color: #f7f7f7;
+  background-image: radial-gradient(ellipse at center, #ffffff 0%, #f3f3f3 55%, #e6e6e6 100%);
   background-attachment: fixed;
   color: var(--text-secondary);
   -webkit-font-smoothing: antialiased;
