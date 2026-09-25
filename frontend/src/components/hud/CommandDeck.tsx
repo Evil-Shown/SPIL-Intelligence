@@ -2,20 +2,54 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DataNeuralGraph } from '../modules/DataNeuralGraph';
 
-const shards = [
-  { x: '6%', y: '8%', w: 46, h: 18 },
-  { x: '8%', y: '22%', w: 28, h: 64 },
-  { x: '4%', y: '48%', w: 70, h: 12 },
-  { x: '11%', y: '70%', w: 36, h: 40 },
-  { x: '18%', y: '14%', w: 18, h: 90 },
-  { x: '88%', y: '10%', w: 52, h: 16 },
-  { x: '92%', y: '28%', w: 22, h: 70 },
-  { x: '80%', y: '62%', w: 64, h: 14 },
-  { x: '86%', y: '78%', w: 30, h: 36 },
-  { x: '24%', y: '6%', w: 14, h: 22 },
-  { x: '70%', y: '18%', w: 40, h: 10 },
-  { x: '16%', y: '88%', w: 80, h: 8 },
+const columns = [
+  { left: '3%', width: 78, duration: '32s', reverse: false },
+  { left: '8%', width: 54, duration: '44s', reverse: true },
+  { left: '14%', width: 36, duration: '26s', reverse: false },
+  { left: '19%', width: 22, duration: '38s', reverse: true },
+  { left: '78%', width: 28, duration: '30s', reverse: true },
+  { left: '84%', width: 62, duration: '41s', reverse: false },
+  { left: '90%', width: 40, duration: '24s', reverse: true },
+  { left: '95%', width: 24, duration: '36s', reverse: false },
 ];
+
+const barPattern = [14, 46, 8, 72, 22, 10, 54, 18, 6, 36, 12, 64, 20, 9, 48];
+
+function DataField() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {columns.map((column) => (
+        <div
+          key={column.left}
+          className="data-drift absolute top-0 flex flex-col gap-3"
+          style={{
+            left: column.left,
+            width: column.width,
+            height: '200%',
+            animationDuration: column.duration,
+            animationDirection: column.reverse ? 'reverse' : 'normal',
+          }}
+        >
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex h-1/2 flex-col justify-around">
+              {barPattern.map((height, index) => (
+                <span
+                  key={`${copy}-${index}`}
+                  className="block bg-neutral-400/70"
+                  style={{
+                    height,
+                    width: index % 3 === 0 ? '100%' : index % 3 === 1 ? '62%' : '38%',
+                    marginLeft: index % 2 === 0 ? 0 : '18%',
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const links = [
   { to: '/projects', label: 'Projects' },
@@ -41,22 +75,14 @@ export function CommandDeck() {
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[#f4f4f4]">
+      <DataField />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse at center, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.72) 42%, rgba(210,210,210,0.55) 100%)',
+            'radial-gradient(ellipse at center, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.72) 28%, rgba(255,255,255,0.15) 58%, rgba(255,255,255,0) 100%)',
         }}
       />
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        {shards.map((shard) => (
-          <span
-            key={`${shard.x}-${shard.y}`}
-            className="absolute bg-neutral-400/50"
-            style={{ left: shard.x, top: shard.y, width: shard.w, height: shard.h, filter: 'blur(0.4px)' }}
-          />
-        ))}
-      </div>
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
         <form onSubmit={submit} className="w-full max-w-xl text-center">
@@ -79,7 +105,10 @@ export function CommandDeck() {
             <span className="text-[#e10600]">● ●</span>
           </div>
           <div className="bg-black px-3 py-3 text-[12px] uppercase tracking-[0.16em] text-white">
-            <div>Reading workspace_</div>
+            <div>
+              Reading workspace
+              <span className="caret-blink">_</span>
+            </div>
             <div className="mt-2 h-1.5 w-16 bg-white/80" />
           </div>
         </div>
