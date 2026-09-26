@@ -391,31 +391,31 @@ export function CommandDeck() {
 
       {/* ─── Full-Screen Samaritan Neural Knowledge Topology ─── */}
       {showMap && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f4f4] text-black">
-          {/* Tactical Top Bar */}
-          <div className="flex h-10 items-center justify-between border-b border-black bg-black px-4 font-mono text-[10px] uppercase tracking-widest text-white shadow-md">
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#f5f5f5] text-black">
+          {/* Tactical Top Bar — Samaritan Light Aesthetic */}
+          <header className="flex h-10 items-center justify-between border-b border-black/20 bg-white/90 px-4 font-mono text-[10px] uppercase tracking-widest text-black/80 shadow-sm backdrop-blur-md">
             <div className="flex items-center gap-3">
               <span className="h-2 w-2 bg-[#e10600] lamp" />
-              <span className="font-bold tracking-[0.24em]">
+              <span className="font-bold tracking-[0.24em] text-black">
                 SPIL NEURAL KNOWLEDGE TOPOLOGY // 11 DEPARTMENTS // SYSTEM: ENFORCED
               </span>
-              <span className="hidden md:inline border border-white/20 bg-white/10 px-2 py-0.5 text-[9px] text-[#22c55e]">
+              <span className="hidden md:inline border border-black/20 bg-black/[0.04] px-2 py-0.5 text-[9px] text-[#1c7a43] font-bold">
                 FULL-FIELD SURVEILLANCE
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="hidden sm:inline font-mono text-[9px] text-white/50">
+              <span className="hidden sm:inline font-mono text-[9px] text-black/40">
                 [ESC OR CLICK TO EXIT]
               </span>
               <button
                 type="button"
                 onClick={() => setShowMap(false)}
-                className="border border-[#e10600] bg-[#e10600] px-3 py-1 font-mono text-[10px] font-bold text-white hover:bg-white hover:text-black hover:border-white transition-colors"
+                className="border border-black bg-black px-3 py-1 font-mono text-[10px] font-bold text-white hover:bg-[#e10600] hover:border-[#e10600] transition-colors"
               >
                 ✕ CLOSE MAP [ESC]
               </button>
             </div>
-          </div>
+          </header>
           <div className="relative flex-1 w-full h-[calc(100vh-40px)] overflow-hidden">
             <DataNeuralGraph />
           </div>

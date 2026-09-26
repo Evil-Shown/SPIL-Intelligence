@@ -145,6 +145,52 @@ async function run() {
     }
   });
 
+  // Test 7: Chat-loop Tool Execution & Door Refusal End-to-End
+  await test('Invariant 7: Chat loop parses natural language intent, invokes kernel, and logs execution/refusal', async () => {
+    // 1. Natural language command to create a task
+    const mockRes1 = {
+      chunks: [] as string[],
+      setHeader: () => {},
+      write: function (chunk: string) { this.chunks.push(chunk); },
+      end: function () {},
+    };
+    const req1 = {
+      body: { message: 'create a task to fix the arc fitting bug, assign to Damitha, priority high' },
+    } as any;
+
+    const { chat } = await import('./controllers/ai.js');
+    await chat(req1, mockRes1 as any);
+
+    const fullStream1 = mockRes1.chunks.join('');
+    if (!fullStream1.includes('"class":"executed"')) {
+      throw new Error(`Expected chat response done event with class 'executed', got stream: ${fullStream1}`);
+    }
+
+    // Verify task actually created in database
+    const createdTask = await prisma.task.findFirst({
+      where: { title: { contains: 'arc fitting bug' } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!createdTask) throw new Error('Task was not created through chat tool-use loop');
+
+    // 2. Natural language command to trigger a critical door
+    const mockRes2 = {
+      chunks: [] as string[],
+      setHeader: () => {},
+      write: function (chunk: string) { this.chunks.push(chunk); },
+      end: function () {},
+    };
+    const req2 = {
+      body: { message: 'publish this decision right now' },
+    } as any;
+
+    await chat(req2, mockRes2 as any);
+    const fullStream2 = mockRes2.chunks.join('');
+    if (!fullStream2.includes('"class":"door"')) {
+      throw new Error(`Expected chat response done event with class 'door', got stream: ${fullStream2}`);
+    }
+  });
+
   console.log('----------------------------------------------------');
   const failed = results.filter((r) => !r.passed);
   if (failed.length > 0) {

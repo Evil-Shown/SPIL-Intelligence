@@ -1,973 +1,734 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import * as THREE from 'three';
 import { Link } from 'react-router-dom';
-import { Activity } from 'lucide-react';
 import {
-  type GraphKind,
   type GraphNode,
-  type Point,
-  nodeColors,
   useNeuralGraphData,
 } from '../../lib/companyBrainGraph';
 
-const FPS_INTERVAL = 1000 / 60;
-
-interface Signal {
-  linkId: string;
-  progress: number;
-  startTime: number;
-}
-
-interface RenderNode extends GraphNode {
+interface Node3D {
+  id: string;
+  label: string;
+  kind: string;
   x: number;
   y: number;
-}
-
-function getCssVar(name: string, fallback: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-}
-
-/** Soft palette keyed by node purpose. Bugs stay rose, workflows use the pulse color. */
-function kindRgb(
-  kind: GraphKind,
-  neuralRgb: string,
-  pulseRgb: string,
-  violetRgb: string,
-  riskRgb: string
-): string {
-  switch (kind) {
-    case 'bug':
-      return riskRgb;
-    case 'research':
-    case 'idea':
-    case 'customer':
-    case 'communication':
-      return violetRgb;
-    case 'workspace':
-    case 'workflow':
-    case 'support':
-      return pulseRgb;
-    default:
-      return neuralRgb;
-  }
-}
-
-interface AmbientNode {
-  x: number;
-  y: number;
+  z: number;
   baseX: number;
   baseY: number;
-  vx: number;
-  vy: number;
-  r: number;
+  baseZ: number;
+  color: THREE.Color;
+  size: number;
+  raw: GraphNode;
+  mesh?: THREE.Mesh;
 }
 
-function isHub(kind: GraphKind) {
-  return kind === 'workspace' || kind === 'department' || kind === 'domain';
-}
-
-function isMajorNode(kind: GraphKind) {
-  return kind === 'workspace' || kind === 'department' || kind === 'workflow';
+interface Link3D {
+  source: Node3D;
+  target: Node3D;
+  strength: number;
 }
 
 export function DataNeuralGraph() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef(0);
-  const lastFrameRef = useRef(0);
-  const signalTimerRef = useRef(0);
-  const signalsRef = useRef<Signal[]>([]);
-  const ambientRef = useRef<AmbientNode[]>([]);
-  const ambientSizeRef = useRef('');
-
-  const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
-  const [selectedId, setSelectedId] = useState('workspace');
+  const [selectedId, setSelectedId] = useState<string>('workspace');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [positions, setPositions] = useState<Record<string, Point>>({});
-  const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [dragging, setDragging] = useState<{ id: string; offset: Point } | null>(null);
-  const [panning, setPanning] = useState<{ start: Point; origin: Point } | null>(null);
+  const [isRotating, setIsRotating] = useState<boolean>(true);
+  const [themeMode, setThemeMode] = useState<'samaritan' | 'cyan' | 'purple' | 'crimson'>('samaritan');
 
-  const { graph, isLoading, counts } = useNeuralGraphData(size.w, size.h);
+  const { graph, counts } = useNeuralGraphData(1200, 800);
 
-  const interactionRef = useRef({
-    selectedId,
-    hoveredId,
-    positions,
-    pan,
-    zoom,
-    dragging,
-    panning,
-  });
-
-  useEffect(() => {
-    interactionRef.current = { selectedId, hoveredId, positions, pan, zoom, dragging, panning };
-  }, [selectedId, hoveredId, positions, pan, zoom, dragging, panning]);
-
-  const graphRef = useRef(graph);
-  graphRef.current = graph;
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setSize({ w: width, h: height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const prevSizeRef = useRef(size);
-
-  useEffect(() => {
-    const sizeChanged = prevSizeRef.current.w !== size.w || prevSizeRef.current.h !== size.h;
-    if (sizeChanged) {
-      prevSizeRef.current = size;
-      setPositions(Object.fromEntries(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }])));
-      return;
+  // Theme palettes (Samaritan light theme + dark crystal alternatives)
+  const themeColors = useMemo(() => {
+    switch (themeMode) {
+      case 'samaritan':
+        return {
+          core: 0xe10600,
+          glow: 0xff4d4d,
+          edge: 0x94a3b8,
+          particle: 0x64748b,
+          ambientBg: 0xf5f5f5,
+          isLight: true,
+        };
+      case 'purple':
+        return {
+          core: 0xd946ef,
+          glow: 0xa855f7,
+          edge: 0x8b5cf6,
+          particle: 0xf472b6,
+          ambientBg: 0x06020a,
+          isLight: false,
+        };
+      case 'crimson':
+        return {
+          core: 0xe10600,
+          glow: 0xff3b30,
+          edge: 0x991b1b,
+          particle: 0xfca5a5,
+          ambientBg: 0x080203,
+          isLight: false,
+        };
+      case 'cyan':
+      default:
+        return {
+          core: 0x00f0ff,
+          glow: 0x38bdf8,
+          edge: 0x0284c7,
+          particle: 0xbae6fd,
+          ambientBg: 0x030712,
+          isLight: false,
+        };
     }
-    setPositions((cur) => {
-      const next = { ...cur };
-      graph.nodes.forEach((n) => {
-        if (!next[n.id]) next[n.id] = { x: n.x, y: n.y };
-      });
-      return next;
+  }, [themeMode]);
+
+  // Construct 3D Spherical/Brain Topology
+  const { nodes3D, links3D, nodeMap } = useMemo(() => {
+    const rawNodes = graph.nodes;
+    const n = rawNodes.length;
+    const radius = 240;
+
+    const map = new Map<string, Node3D>();
+    const n3dList: Node3D[] = [];
+
+    rawNodes.forEach((rn, i) => {
+      // Golden spiral distribution on 3D sphere + core cluster
+      let x = 0, y = 0, z = 0;
+      if (rn.kind === 'workspace') {
+        x = 0; y = 0; z = 0;
+      } else if (rn.kind === 'department') {
+        const phi = Math.acos(1 - (2 * (i + 1)) / (n + 1));
+        const theta = Math.PI * (1 + 5 ** 0.5) * (i + 1);
+        const r = radius * 0.45;
+        x = r * Math.sin(phi) * Math.cos(theta);
+        y = r * Math.sin(phi) * Math.sin(theta);
+        z = r * Math.cos(phi);
+      } else {
+        const phi = Math.acos(1 - (2 * (i + 1)) / (n + 1));
+        const theta = Math.PI * (1 + 5 ** 0.5) * (i + 1);
+        const r = radius * (0.65 + Math.sin(i * 3.7) * 0.35);
+        x = r * Math.sin(phi) * Math.cos(theta);
+        y = r * Math.sin(phi) * Math.sin(theta);
+        z = r * Math.cos(phi);
+      }
+
+      // Base color by category
+      let hexColor = themeColors.particle;
+      if (rn.kind === 'workspace') hexColor = themeColors.isLight ? 0x0a0a0a : 0xffffff;
+      else if (rn.kind === 'department') hexColor = themeColors.core;
+      else if (rn.kind === 'person') hexColor = themeColors.isLight ? 0x166534 : 0x22c55e;
+      else if (rn.kind === 'bug') hexColor = themeColors.isLight ? 0x991b1b : 0xef4444;
+      else if (rn.kind === 'workflow') hexColor = themeColors.isLight ? 0x475569 : themeColors.glow;
+
+      const nodeObj: Node3D = {
+        id: rn.id,
+        label: rn.label,
+        kind: rn.kind,
+        x, y, z,
+        baseX: x, baseY: y, baseZ: z,
+        color: new THREE.Color(hexColor),
+        size: rn.kind === 'workspace' ? 14 : rn.kind === 'department' ? 8 : 4.5,
+        raw: rn,
+      };
+
+      map.set(rn.id, nodeObj);
+      n3dList.push(nodeObj);
     });
-  }, [graph.nodes, size.w, size.h]);
 
-  const positionedNodes = useMemo(
-    () => graph.nodes.map((n) => ({ ...n, x: positions[n.id]?.x ?? n.x, y: positions[n.id]?.y ?? n.y })),
-    [graph.nodes, positions]
-  );
+    const l3dList: Link3D[] = [];
+    graph.links.forEach((l) => {
+      const src = map.get(l.source);
+      const tgt = map.get(l.target);
+      if (src && tgt) {
+        l3dList.push({ source: src, target: tgt, strength: l.strength });
+      }
+    });
 
-  const nodeMap = useMemo(
-    () => new Map(positionedNodes.map((n) => [n.id, n])),
-    [positionedNodes]
-  );
+    return { nodes3D: n3dList, links3D: l3dList, nodeMap: map };
+  }, [graph, themeColors]);
 
-  const selectedNode = nodeMap.get(selectedId) ?? positionedNodes[0];
+  const selectedNode = nodeMap.get(selectedId) ?? nodes3D[0];
 
   const connectedNodes = useMemo(() => {
     if (!selectedNode) return [];
-    const ids = new Set<string>();
-    graph.links.forEach((l) => {
-      if (l.source === selectedNode.id) ids.add(l.target);
-      if (l.target === selectedNode.id) ids.add(l.source);
+    const connected: Node3D[] = [];
+    links3D.forEach((l) => {
+      if (l.source.id === selectedNode.id) connected.push(l.target);
+      if (l.target.id === selectedNode.id) connected.push(l.source);
     });
-    return [...ids].map((id) => nodeMap.get(id)).filter((n): n is GraphNode => !!n);
-  }, [graph.links, nodeMap, selectedNode]);
+    return connected;
+  }, [selectedNode, links3D]);
 
-  const screenToGraph = useCallback((clientX: number, clientY: number): Point => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return { x: clientX, y: clientY };
-    const { pan: p, zoom: z } = interactionRef.current;
-    return { x: (clientX - rect.left - p.x) / z, y: (clientY - rect.top - p.y) / z };
-  }, []);
-
-  const hitTest = useCallback((point: Point): GraphNode | null => {
-    const { positions: pos } = interactionRef.current;
-    let found: GraphNode | null = null;
-    let bestDist = Infinity;
-    for (const node of graphRef.current.nodes) {
-      const x = pos[node.id]?.x ?? node.x;
-      const y = pos[node.id]?.y ?? node.y;
-      const dist = Math.hypot(x - point.x, y - point.y);
-      const hitRadius = node.radius + (isHub(node.kind) ? 14 : 10);
-      if (dist <= hitRadius && dist < bestDist) {
-        bestDist = dist;
-        found = { ...node, x, y };
-      }
-    }
-    return found;
-  }, []);
-
-  const resetView = () => {
-    setPan({ x: 0, y: 0 });
-    setZoom(1);
-    setPositions(Object.fromEntries(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }])));
-  };
-
-  const focusNode = (node: GraphNode) => {
-    const targetZoom = Math.min(1.55, Math.max(1.05, zoom));
-    setSelectedId(node.id);
-    setZoom(targetZoom);
-    setPan({
-      x: size.w * 0.43 - node.x * targetZoom,
-      y: size.h * 0.5 - node.y * targetZoom,
-    });
-  };
-
+  // Main Three.js Scene Setup & Animation Loop
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || isLoading) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let width = container.clientWidth || window.innerWidth;
+    let height = container.clientHeight || window.innerHeight;
 
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = size.w * dpr;
-      canvas.height = size.h * dpr;
-      canvas.style.width = `${size.w}px`;
-      canvas.style.height = `${size.h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
+    // Scene & Camera
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(themeColors.ambientBg, themeColors.isLight ? 0.0014 : 0.0018);
 
-    resize();
+    const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 2000);
+    camera.position.set(0, 40, 520);
 
-    const initAmbient = (w: number, h: number) => {
-      const cx = w * 0.5;
-      const cy = h * 0.5;
-      const spread = Math.min(w, h) * 0.52;
-      const nodes: AmbientNode[] = [];
-      for (let i = 0; i < 95; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = spread * Math.sqrt(Math.random());
-        const x = cx + Math.cos(angle) * dist;
-        const y = cy + Math.sin(angle) * dist;
-        nodes.push({
-          x,
-          y,
-          baseX: x,
-          baseY: y,
-          vx: (Math.random() - 0.5) * 0.045,
-          vy: (Math.random() - 0.5) * 0.045,
-          r: 0.45 + Math.random() * 1.35,
-        });
-      }
-      ambientRef.current = nodes;
-    };
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(themeColors.ambientBg, 1);
+    container.innerHTML = '';
+    container.appendChild(renderer.domElement);
 
-    const sizeKey = `${size.w}x${size.h}`;
-    if (ambientSizeRef.current !== sizeKey) {
-      initAmbient(size.w, size.h);
-      ambientSizeRef.current = sizeKey;
-    }
+    // Main Brain Group (for rotation & dragging)
+    const brainGroup = new THREE.Group();
+    scene.add(brainGroup);
 
-    const emitSignal = () => {
-      const links = graphRef.current.links;
-      if (!links.length) return;
-      const link = links[Math.floor(Math.random() * links.length)];
-      signalsRef.current.push({ linkId: link.id, progress: 0, startTime: performance.now() });
-    };
+    // ── 1. Central Core Glowing Star / Sun ──
+    const coreGeo = new THREE.SphereGeometry(18, 32, 32);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: themeColors.isLight ? 0xe10600 : 0xffffff,
+      transparent: true,
+      opacity: themeColors.isLight ? 0.95 : 0.95,
+    });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    brainGroup.add(coreMesh);
 
-    const drawJarvisBackground = (w: number, h: number, _neuralRgb: string, timestamp: number) => {
-      // Clean clinical Samaritan background
-      ctx.fillStyle = '#fafafa';
-      ctx.fillRect(0, 0, w, h);
-
-      // Precision surveillance grid
-      const spacing = 48;
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = 0; x < w; x += spacing) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-      }
-      for (let y = 0; y < h; y += spacing) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-      }
-      ctx.stroke();
-
-      // Precision crosshairs at every intersection
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.font = '8px "Share Tech Mono", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      for (let x = spacing; x < w; x += spacing * 2) {
-        for (let y = spacing; y < h; y += spacing * 2) {
-          ctx.fillText('+', x, y);
-        }
-      }
-
-      // Tactical scanline sweep
-      const scanY = ((timestamp / 25) % (h + 100)) - 50;
-      const scan = ctx.createLinearGradient(0, scanY - 30, 0, scanY + 30);
-      scan.addColorStop(0, 'rgba(225, 6, 0, 0)');
-      scan.addColorStop(0.5, 'rgba(225, 6, 0, 0.03)');
-      scan.addColorStop(1, 'rgba(225, 6, 0, 0)');
-      ctx.fillStyle = scan;
-      ctx.fillRect(0, 0, w, h);
-    };
-
-    const curvePoint = (from: Point, to: Point, curveOffset: number, progress: number): Point => {
-      const mx = (from.x + to.x) / 2;
-      const my = (from.y + to.y) / 2;
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const cpx = mx + (-dy / len) * curveOffset;
-      const cpy = my + (dx / len) * curveOffset;
-      const oneMinus = 1 - progress;
-
-      return {
-        x: oneMinus * oneMinus * from.x + 2 * oneMinus * progress * cpx + progress * progress * to.x,
-        y: oneMinus * oneMinus * from.y + 2 * oneMinus * progress * cpy + progress * progress * to.y,
-      };
-    };
-
-    const drawJarvisRings = (cx: number, cy: number, timestamp: number, rgb: string, scale = 1) => {
-      const rings = [
-        { r: 52 * scale, speed: 0.0004, dash: [4, 8], width: 0.8, alpha: 0.35 },
-        { r: 78 * scale, speed: -0.0003, dash: [2, 10], width: 0.6, alpha: 0.25 },
-        { r: 108 * scale, speed: 0.0002, dash: [6, 14], width: 0.5, alpha: 0.18 },
-      ];
-      rings.forEach((ring, i) => {
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(timestamp * ring.speed + i * 1.2);
-        ctx.beginPath();
-        ctx.arc(0, 0, ring.r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${rgb}, ${ring.alpha})`;
-        ctx.lineWidth = ring.width;
-        ctx.setLineDash(ring.dash);
-        ctx.stroke();
-        ctx.restore();
-      });
-    };
-
-    const drawAmbientLayer = (timestamp: number, neuralRgb: string, pulseRgb: string) => {
-      const nodes = ambientRef.current;
-      nodes.forEach((n, i) => {
-        n.x += n.vx + (n.baseX - n.x) * 0.004;
-        n.y += n.vy + (n.baseY - n.y) * 0.004;
-        n.x += Math.sin(timestamp / 3000 + i) * 0.08;
-        n.y += Math.cos(timestamp / 3200 + i) * 0.06;
-      });
-
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i];
-          const b = nodes[j];
-          const d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d > 86) continue;
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(${neuralRgb}, ${0.035 * (1 - d / 86)})`;
-          ctx.lineWidth = 0.35;
-          ctx.stroke();
-        }
-      }
-
-      nodes.forEach((n, index) => {
-        if (index % 17 === 0) {
-          const haze = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 12);
-          haze.addColorStop(0, `rgba(${pulseRgb}, 0.08)`);
-          haze.addColorStop(1, `rgba(${pulseRgb}, 0)`);
-          ctx.fillStyle = haze;
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, n.r * 12, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${pulseRgb}, 0.26)`;
-        ctx.fill();
-      });
-    };
-
-    const drawCurvedLink = (
-      from: Point,
-      to: Point,
-      opacity: number,
-      lineWidth: number,
-      _rgb: string,
-      curveOffset: number,
-      active = false
-    ) => {
-      const mx = (from.x + to.x) / 2;
-      const my = (from.y + to.y) / 2;
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const nx = -dy / len;
-      const ny = dx / len;
-
-      ctx.save();
-      if (active) {
-        // Active tactical selection link
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.quadraticCurveTo(mx + nx * curveOffset, my + ny * curveOffset, to.x, to.y);
-        ctx.strokeStyle = '#e10600';
-        ctx.lineWidth = Math.max(1.5, lineWidth);
-        ctx.stroke();
-
-        // Directional midpoint pip
-        const midX = (from.x + to.x) / 2 + nx * curveOffset * 0.5;
-        const midY = (from.y + to.y) / 2 + ny * curveOffset * 0.5;
-        ctx.fillStyle = '#e10600';
-        ctx.fillRect(midX - 2, midY - 2, 4, 4);
-      } else {
-        // High-contrast subtle tactical link
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.quadraticCurveTo(mx + nx * curveOffset, my + ny * curveOffset, to.x, to.y);
-        ctx.strokeStyle = `rgba(0, 0, 0, ${Math.min(0.35, opacity * 0.45)})`;
-        ctx.lineWidth = Math.max(0.7, lineWidth * 0.8);
-        ctx.stroke();
-      }
-    const drawClusterHalo = (node: RenderNode, timestamp: number, _rgb: string, focused: boolean) => {
-      if (node.kind === 'workspace') return;
-      const base = node.kind === 'department' ? node.radius * 3.8 : node.radius * 2.8;
-      const radius = base + Math.sin(timestamp / 2000 + node.x * 0.01) * 2;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = focused ? 'rgba(225, 6, 0, 0.4)' : 'rgba(0, 0, 0, 0.07)';
-      ctx.lineWidth = focused ? 1.2 : 0.8;
-      ctx.setLineDash([4, 8]);
-      ctx.stroke();
-      ctx.restore();
-    };
-
-    const drawNode = (
-      node: RenderNode,
-      active: boolean,
-      _timestamp: number,
-      neuralRgb: string,
-      pulseRgb: string,
-      violetRgb: string,
-      riskRgb: string,
-      _labelPrimary: string,
-      _labelSecondary: string
-    ) => {
-      const rgb = kindRgb(node.kind, neuralRgb, pulseRgb, violetRgb, riskRgb);
-      const r = node.radius;
-      const hub = isHub(node.kind);
-      const showLabel =
-        active ||
-        hub ||
-        node.kind === 'project' ||
-        node.kind === 'workflow' ||
-        node.kind === 'person' ||
-        node.kind === 'customer';
-
-      if (node.kind === 'workspace') {
-        // Samaritan Prime Core: Concentric crosshair rings with pulsing crimson core
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r * 2.8, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(225, 6, 0, 0.25)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 6]);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r * 1.8, 0, Math.PI * 2);
-        ctx.strokeStyle = '#e10600';
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([]);
-        ctx.stroke();
-
-        // Crosshair lines through core
-        ctx.strokeStyle = 'rgba(225, 6, 0, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(node.x - r * 3.2, node.y);
-        ctx.lineTo(node.x + r * 3.2, node.y);
-        ctx.moveTo(node.x, node.y - r * 3.2);
-        ctx.lineTo(node.x, node.y + r * 3.2);
-        ctx.stroke();
-
-        // Inner solid core
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r * 0.9, 0, Math.PI * 2);
-        ctx.fillStyle = '#e10600';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r * 0.35, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.restore();
-      } else {
-        // High-contrast tactical node
-        const isTargetActive = active || interactionRef.current.selectedId === node.id;
-        ctx.save();
-
-        if (isTargetActive) {
-          // Bounding box around selected target
-          const boxSize = r * 2.6;
-          ctx.strokeStyle = '#e10600';
-          ctx.lineWidth = 1.2;
-          ctx.strokeRect(node.x - boxSize / 2, node.y - boxSize / 2, boxSize, boxSize);
-
-          // Corner ticks
-          ctx.fillStyle = '#e10600';
-          ctx.font = '9px "Share Tech Mono", monospace';
-          ctx.fillText('+', node.x - boxSize / 2, node.y - boxSize / 2);
-          ctx.fillText('+', node.x + boxSize / 2, node.y - boxSize / 2);
-        }
-
-        // Crisp solid node circle with dark boundary
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r + 1, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.strokeStyle = isTargetActive ? '#e10600' : 'rgba(0, 0, 0, 0.85)';
-        ctx.lineWidth = isTargetActive ? 2 : 1.2;
-        ctx.stroke();
-
-        // Node center pip
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, hub ? r * 0.55 : r * 0.45, 0, Math.PI * 2);
-        ctx.fillStyle = isTargetActive ? '#e10600' : `rgba(${rgb}, 0.95)`;
-        ctx.fill();
-
-        ctx.restore();
-      }
-
-      if (showLabel) {
-        const label = node.label.length > 28 ? `${node.label.slice(0, 28)}...` : node.label;
-        const fontSize = node.kind === 'workspace' ? 11 : node.kind === 'department' ? 10 : 9;
-        ctx.font = `600 ${fontSize}px "Share Tech Mono", monospace`;
-        const text = label.toUpperCase();
-        const textWidth = ctx.measureText(text).width;
-        const labelX = node.x + r + 8;
-        const labelY = node.y - fontSize / 2 - 2;
-        const padX = 5;
-        const labelH = fontSize + 6;
-
-        // Brutalist 0-radius label box
-        ctx.fillStyle = active ? '#000000' : '#ffffff';
-        ctx.fillRect(labelX - padX, labelY, textWidth + padX * 2, labelH);
-        ctx.strokeStyle = active ? '#e10600' : 'rgba(0, 0, 0, 0.85)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(labelX - padX, labelY, textWidth + padX * 2, labelH);
-
-        ctx.fillStyle = active ? '#ffffff' : '#000000';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, labelX, labelY + labelH / 2);
-      }
-    };
-
-    const drawSignal = (
-      from: Point,
-      to: Point,
-      progress: number,
-      curveOffset: number,
-      _neuralRgb: string,
-      _pulseRgb: string
-    ) => {
-      const { x, y } = curvePoint(from, to, curveOffset, progress);
-      const tail = curvePoint(from, to, curveOffset, Math.max(0, progress - 0.04));
-
-      ctx.save();
-      // Packet vector line
-      ctx.beginPath();
-      ctx.moveTo(tail.x, tail.y);
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = '#e10600';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Sharp packet diamond/crosshair pip
-      ctx.fillStyle = '#e10600';
-      ctx.fillRect(x - 2, y - 2, 4, 4);
-
-      ctx.restore();
-    };
-
-    const draw = (timestamp: number) => {
-      animationRef.current = requestAnimationFrame(draw);
-      if (timestamp - lastFrameRef.current < FPS_INTERVAL) return;
-      lastFrameRef.current = timestamp;
-
-      const { selectedId: sel, hoveredId: hov, positions: pos, pan: p, zoom: z, dragging: drag } =
-        interactionRef.current;
-      const { nodes, links } = graphRef.current;
-
-      const neuralRgb = getCssVar('--neural-rgb', '109, 143, 232');
-      const pulseRgb = getCssVar('--neural-pulse-rgb', '138, 168, 240');
-      const violetRgb = getCssVar('--neural-violet-rgb', '167, 139, 250');
-      const riskRgb = getCssVar('--risk-rgb', '233, 138, 160');
-      const labelPrimary = getCssVar('--text-primary', '#0f172a');
-      const labelSecondary = getCssVar('--text-secondary', '#475569');
-
-      ctx.clearRect(0, 0, size.w, size.h);
-      drawJarvisBackground(size.w, size.h, neuralRgb, timestamp);
-      drawAmbientLayer(timestamp, neuralRgb, pulseRgb);
-
-      signalTimerRef.current += FPS_INTERVAL;
-      if (signalTimerRef.current > 1100 + Math.random() * 900) {
-        signalTimerRef.current = 0;
-        emitSignal();
-      }
-      signalsRef.current = signalsRef.current.filter((s) => {
-        s.progress = (timestamp - s.startTime) / 900;
-        return s.progress < 1;
-      });
-
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.scale(z, z);
-
-      const positioned = nodes.map((n) => ({
-        ...n,
-        x:
-          (pos[n.id]?.x ?? n.x) +
-          (drag?.id === n.id ? 0 : Math.sin(timestamp / 2400 + n.x * 0.013) * (isHub(n.kind) ? 0.9 : 1.6)),
-        y:
-          (pos[n.id]?.y ?? n.y) +
-          (drag?.id === n.id ? 0 : Math.cos(timestamp / 2600 + n.y * 0.011) * (isHub(n.kind) ? 0.8 : 1.35)),
-      }));
-      const map = new Map(positioned.map((n) => [n.id, n]));
-      const focusId = hov ?? sel;
-      const focusedIds = new Set<string>([focusId]);
-
-      links.forEach((link) => {
-        if (link.source === focusId) focusedIds.add(link.target);
-        if (link.target === focusId) focusedIds.add(link.source);
-      });
-
-      positioned
-        .filter((node) => isMajorNode(node.kind) || (node.kind === 'domain' && focusedIds.has(node.id)))
-        .forEach((node) => {
-          const rgb = kindRgb(node.kind, neuralRgb, pulseRgb, violetRgb, riskRgb);
-          drawClusterHalo(node, timestamp, rgb, focusedIds.has(node.id));
-        });
-
-      links.forEach((link, index) => {
-        const source = map.get(link.source);
-        const target = map.get(link.target);
-        if (!source || !target) return;
-
-        const active =
-          sel === link.source || sel === link.target || hov === link.source || hov === link.target;
-        const inFocus = focusedIds.has(link.source) && focusedIds.has(link.target);
-        const isHot =
-          source.kind === 'workspace' ||
-          target.kind === 'workspace' ||
-          source.kind === 'department' ||
-          target.kind === 'department' ||
-          source.kind === 'domain' ||
-          target.kind === 'domain';
-
-        const linkKind =
-          source.kind === 'bug' || target.kind === 'bug'
-            ? 'bug'
-            : source.kind === 'research' || target.kind === 'research'
-              ? 'research'
-              : source.kind;
-        const rgb = kindRgb(linkKind, neuralRgb, pulseRgb, violetRgb, riskRgb);
-
-        const opacity = active ? 0.82 : inFocus ? 0.46 : isHot ? 0.28 : 0.1;
-        const curveOffset = Math.sin(index * 1.7) * 10;
-        drawCurvedLink(
-          source,
-          target,
-          opacity,
-          active ? 1.35 : inFocus ? 0.95 : isHot ? 0.7 : 0.42,
-          rgb,
-          curveOffset,
-          active
-        );
-      });
-
-      signalsRef.current.forEach((signal) => {
-        const link = links.find((l) => l.id === signal.linkId);
-        if (!link) return;
-        const source = map.get(link.source);
-        const target = map.get(link.target);
-        if (!source || !target) return;
-        const linkIndex = links.findIndex((l) => l.id === signal.linkId);
-        drawSignal(source, target, signal.progress, Math.sin(linkIndex * 1.7) * 10, neuralRgb, pulseRgb);
-      });
-
-      [...positioned]
-        .sort((a, b) => Number(focusedIds.has(a.id)) - Number(focusedIds.has(b.id)))
-        .forEach((node) => {
-        const active = sel === node.id || hov === node.id || focusedIds.has(node.id);
-        drawNode(node, active, timestamp, neuralRgb, pulseRgb, violetRgb, riskRgb, labelPrimary, labelSecondary);
-      });
-
-      ctx.restore();
-    };
-
-    animationRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animationRef.current);
-  }, [isLoading, size]);
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const gp = screenToGraph(e.clientX, e.clientY);
-    const hit = hitTest(gp);
-    if (hit) {
-      e.currentTarget.setPointerCapture(e.pointerId);
-      setDragging({ id: hit.id, offset: { x: hit.x - gp.x, y: hit.y - gp.y } });
-      setSelectedId(hit.id);
+    // Core halo sprite
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    if (themeColors.isLight) {
+      gradient.addColorStop(0, 'rgba(225, 6, 0, 0.9)');
+      gradient.addColorStop(0.25, 'rgba(225, 6, 0, 0.45)');
+      gradient.addColorStop(0.65, 'rgba(225, 6, 0, 0.12)');
+      gradient.addColorStop(1, 'rgba(245, 245, 245, 0)');
     } else {
-      setPanning({ start: { x: e.clientX, y: e.clientY }, origin: pan });
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      gradient.addColorStop(0.2, 'rgba(0, 240, 255, 0.8)');
+      gradient.addColorStop(0.6, 'rgba(0, 240, 255, 0.2)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
-  };
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 128, 128);
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const gp = screenToGraph(e.clientX, e.clientY);
-    if (dragging) {
-      setPositions((cur) => ({
-        ...cur,
-        [dragging.id]: { x: gp.x + dragging.offset.x, y: gp.y + dragging.offset.y },
-      }));
-      return;
-    }
-    if (panning) {
-      setPan({
-        x: panning.origin.x + e.clientX - panning.start.x,
-        y: panning.origin.y + e.clientY - panning.start.y,
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      color: themeColors.core,
+      transparent: true,
+      blending: themeColors.isLight ? THREE.NormalBlending : THREE.AdditiveBlending,
+      opacity: themeColors.isLight ? 0.75 : 1,
+    });
+    const coreSprite = new THREE.Sprite(spriteMat);
+    coreSprite.scale.set(160, 160, 1);
+    brainGroup.add(coreSprite);
+
+    // ── 2. Instanced or Sphere Meshes for Nodes ──
+    const nodeMeshes: THREE.Mesh[] = [];
+    nodes3D.forEach((n) => {
+      const geo = new THREE.SphereGeometry(n.size, 16, 16);
+      const isSelected = n.id === selectedId;
+      const mat = new THREE.MeshStandardMaterial({
+        color: n.color,
+        emissive: n.color,
+        emissiveIntensity: themeColors.isLight
+          ? (isSelected ? 0.9 : 0.25)
+          : (isSelected ? 1.8 : 0.8),
+        roughness: themeColors.isLight ? 0.5 : 0.2,
+        metalness: themeColors.isLight ? 0.2 : 0.8,
       });
-      return;
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(n.x, n.y, n.z);
+      (mesh as any).nodeId = n.id;
+      brainGroup.add(mesh);
+      nodeMeshes.push(mesh);
+      n.mesh = mesh;
+    });
+
+    // ── 3. High-Density Synaptic Lines (Links) ──
+    const linePositions = new Float32Array(links3D.length * 6);
+    const lineColors = new Float32Array(links3D.length * 6);
+
+    const baseEdgeColor = new THREE.Color(themeColors.edge);
+    const brightEdgeColor = new THREE.Color(themeColors.core);
+
+    links3D.forEach((link, i) => {
+      const i6 = i * 6;
+      linePositions[i6] = link.source.x;
+      linePositions[i6 + 1] = link.source.y;
+      linePositions[i6 + 2] = link.source.z;
+      linePositions[i6 + 3] = link.target.x;
+      linePositions[i6 + 4] = link.target.y;
+      linePositions[i6 + 5] = link.target.z;
+
+      const c = link.source.id === selectedId || link.target.id === selectedId ? brightEdgeColor : baseEdgeColor;
+      lineColors[i6] = c.r;
+      lineColors[i6 + 1] = c.g;
+      lineColors[i6 + 2] = c.b;
+      lineColors[i6 + 3] = c.r;
+      lineColors[i6 + 4] = c.g;
+      lineColors[i6 + 5] = c.b;
+    });
+
+    const lineGeometry = new THREE.BufferGeometry();
+    lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    lineGeometry.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: themeColors.isLight ? 0.55 : 0.45,
+      blending: themeColors.isLight ? THREE.NormalBlending : THREE.AdditiveBlending,
+    });
+    const lineSegments = new THREE.LineSegments(lineGeometry, lineMaterial);
+    brainGroup.add(lineSegments);
+
+    // ── 4. Floating Neural Dust Particles ──
+    const dustCount = themeColors.isLight ? 450 : 800;
+    const dustGeo = new THREE.BufferGeometry();
+    const dustPos = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 2 - 1);
+      const r = 180 + Math.random() * 180;
+      dustPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      dustPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      dustPos[i * 3 + 2] = r * Math.cos(phi);
     }
-    const hit = hitTest(gp);
-    setHoveredId(hit?.id ?? null);
-  };
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    const dustMat = new THREE.PointsMaterial({
+      size: themeColors.isLight ? 2.6 : 2.2,
+      color: themeColors.particle,
+      transparent: true,
+      opacity: themeColors.isLight ? 0.45 : 0.5,
+      blending: themeColors.isLight ? THREE.NormalBlending : THREE.AdditiveBlending,
+    });
+    const dustPoints = new THREE.Points(dustGeo, dustMat);
+    brainGroup.add(dustPoints);
 
-  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const gp = screenToGraph(e.clientX, e.clientY);
-    const hit = hitTest(gp);
-    if (hit) focusNode(hit);
-  };
+    // ── 5. Ambient Lights ──
+    const ambientLight = new THREE.AmbientLight(0xffffff, themeColors.isLight ? 0.95 : 0.4);
+    scene.add(ambientLight);
 
-  const handlePointerUp = () => {
-    setDragging(null);
-    setPanning(null);
-  };
+    const pointLight = new THREE.PointLight(themeColors.core, themeColors.isLight ? 1.5 : 3, 600);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
 
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    setZoom((z) => Math.min(2, Math.max(0.4, z + (e.deltaY > 0 ? -0.07 : 0.07))));
-  };
+    // ── 6. Interactive Raycasting & Mouse Controls ──
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-999, -999);
 
-  if (isLoading) {
-    return (
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4">
-        <Activity size={28} className="animate-pulse text-neural-core" />
-        <p className="font-mono text-xs uppercase tracking-widest text-muted">Loading neural map…</p>
-      </div>
-    );
-  }
+    let isPointerDown = false;
+    let prevMouseX = 0;
+    let prevMouseY = 0;
+
+    const onPointerDown = (e: MouseEvent) => {
+      isPointerDown = true;
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+    };
+
+    const onPointerMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      if (isPointerDown) {
+        const deltaX = e.clientX - prevMouseX;
+        const deltaY = e.clientY - prevMouseY;
+        brainGroup.rotation.y += deltaX * 0.006;
+        brainGroup.rotation.x += deltaY * 0.006;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      }
+    };
+
+    const onPointerUp = () => {
+      isPointerDown = false;
+    };
+
+    const onClick = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const clickMouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+
+      raycaster.setFromCamera(clickMouse, camera);
+      const intersects = raycaster.intersectObjects(nodeMeshes);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object as any;
+        if (hit.nodeId) {
+          setSelectedId(hit.nodeId);
+        }
+      }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.4, 200, 1000);
+    };
+
+    container.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+    container.addEventListener('click', onClick);
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    // Handle Resize
+    const onResize = () => {
+      if (!container) return;
+      width = container.clientWidth || window.innerWidth;
+      height = container.clientHeight || window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+    window.addEventListener('resize', onResize);
+
+    // ── 7. Animation Loop with Organic Breathing ──
+    let clock = new THREE.Clock();
+    let animId = 0;
+
+    const animate = () => {
+      animId = requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      // Continuous subtle idle rotation
+      if (isRotating && !isPointerDown) {
+        brainGroup.rotation.y += 0.0025;
+        brainGroup.rotation.x = Math.sin(elapsed * 0.3) * 0.08;
+      }
+
+      // Organic pulsating breathing of the core
+      const pulse = 1 + Math.sin(elapsed * 3.5) * 0.12;
+      coreMesh.scale.set(pulse, pulse, pulse);
+      coreSprite.scale.set(160 * pulse, 160 * pulse, 1);
+
+      // Dust drift
+      dustPoints.rotation.y -= 0.0008;
+      dustPoints.rotation.z += 0.0004;
+
+      // Hover Raycasting
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(nodeMeshes);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object as any;
+        setHoveredId(hit.nodeId);
+        container.style.cursor = 'pointer';
+      } else {
+        setHoveredId(null);
+        container.style.cursor = isPointerDown ? 'grabbing' : 'grab';
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      container.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('mousemove', onPointerMove);
+      window.removeEventListener('mouseup', onPointerUp);
+      container.removeEventListener('click', onClick);
+      container.removeEventListener('wheel', onWheel);
+      window.removeEventListener('resize', onResize);
+      renderer.dispose();
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+    };
+  }, [nodes3D, links3D, themeColors, isRotating]);
 
   return (
-    <>
-      <div ref={containerRef} className="absolute inset-0 z-10">
-        <canvas
-          ref={canvasRef}
-          className={`h-full w-full touch-none ${
-            dragging || panning ? 'cursor-grabbing' : hoveredId ? 'cursor-pointer' : 'cursor-grab'
+    <div
+      className="relative h-full w-full overflow-hidden select-none transition-colors duration-300"
+      style={{ backgroundColor: themeColors.isLight ? '#f5f5f5' : '#030712' }}
+    >
+      {/* 3D WebGL Canvas Mount */}
+      <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" />
+
+      {/* ─── HUD OVERLAYS & CONTROLS ─── */}
+
+      {/* Top Left Header */}
+      <div className="pointer-events-none absolute left-6 top-6 z-20 font-mono">
+        <div className="flex items-center gap-3">
+          <span
+            className="h-2 w-2 rounded-none lamp"
+            style={{ backgroundColor: themeColors.isLight ? '#e10600' : '#00f0ff' }}
+          />
+          <h1
+            className={`text-sm font-bold uppercase tracking-[0.3em] ${
+              themeColors.isLight ? 'text-black' : 'text-white'
+            }`}
+          >
+            QUANTUM SYNAPSE TOPOLOGY // 3D CORE
+          </h1>
+        </div>
+        <p
+          className={`mt-1 text-[10px] uppercase tracking-widest ${
+            themeColors.isLight ? 'text-black/60 font-semibold' : 'text-white/50'
           }`}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onWheel={handleWheel}
-          onDoubleClick={handleDoubleClick}
-        />
+        >
+          {nodes3D.length} ACTIVE NEURAL NODES · {links3D.length} SYNAPTIC LINKS · ROTATION: {isRotating ? 'ACTIVE' : 'LOCKED'}
+        </p>
       </div>
 
-      <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between p-3">
-        {/* Top-Left Topology Header */}
-        <div className="pointer-events-auto border border-black/90 bg-white/95 px-3.5 py-2 font-mono shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 bg-[#e10600] lamp" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-black">
-              TOPOLOGY // COMPANY BRAIN
-            </span>
-            <span className="text-[10px] text-black/40">/ SPIL-OPTI</span>
-          </div>
-          <p className="mt-0.5 text-[9px] uppercase tracking-widest text-black/60">
-            {positionedNodes.length} NODES · {graph.links.length} LINKS · SYSTEM: NOMINAL
-          </p>
-        </div>
-
-        {/* Top-Right Tactical Zoom Controls */}
-        <div className="pointer-events-auto flex items-center gap-1 border border-black/90 bg-white/95 p-1 font-mono shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
-          <button
-            type="button"
-            onClick={() => setZoom((v) => Math.max(0.4, v - 0.1))}
-            className="px-2 py-0.5 text-xs font-bold hover:bg-black hover:text-white transition-colors"
+      {/* Top Right Theme & Mode Controls */}
+      <div className="absolute right-6 top-6 z-20 flex items-center gap-3 font-mono">
+        {/* Color Theme Selector */}
+        <div
+          className={`flex items-center gap-2 border px-3 py-1.5 backdrop-blur-md ${
+            themeColors.isLight
+              ? 'border-black/20 bg-white/85 shadow-sm text-black'
+              : 'border-white/20 bg-black/60 text-white'
+          }`}
+        >
+          <span
+            className={`text-[9px] uppercase tracking-widest ${
+              themeColors.isLight ? 'text-black/60 font-bold' : 'text-white/50'
+            }`}
           >
-            -
-          </button>
-          <span className="px-1 text-[10px] font-bold text-black/80">{Math.round(zoom * 100)}%</span>
-          <button
-            type="button"
-            onClick={() => setZoom((v) => Math.min(2, v + 0.1))}
-            className="px-2 py-0.5 text-xs font-bold hover:bg-black hover:text-white transition-colors"
-          >
-            +
-          </button>
-          <div className="mx-1 h-3.5 w-px bg-black/20" />
-          <button
-            type="button"
-            onClick={resetView}
-            className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider hover:bg-[#e10600] hover:text-white transition-colors"
-          >
-            RESET
-          </button>
-        </div>
-      </div>
-
-      <p className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 font-mono text-[9px] uppercase tracking-widest text-black/40">
-        [ DRAG NODES · DBL-CLICK TO FOCUS · SCROLL TO ZOOM · CLICK TO INSPECT ]
-      </p>
-
-      {/* Bottom-Left Tactical Legend */}
-      <div className="pointer-events-none absolute bottom-4 left-4 z-20 w-[240px] border border-black/90 bg-white/95 p-3 font-mono shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-        <div className="mb-2 flex items-center justify-between border-b border-black/15 pb-1 text-[9px] uppercase tracking-widest text-black font-bold">
-          <span>CLASSIFICATION KEY</span>
-          <span className="h-1.5 w-1.5 bg-[#e10600]" />
-        </div>
-        <div className="grid grid-cols-2 gap-1.5 text-[9px] font-semibold text-black/80">
-          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
-            <span className="h-2 w-2 bg-[#e10600]" />
-            <span>DEPARTMENTS</span>
-          </div>
-          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
-            <span className="h-2 w-2 bg-[#1c7a43]" />
-            <span>PERSONNEL</span>
-          </div>
-          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
-            <span className="h-2 w-2 bg-[#8a6a00]" />
-            <span>WORKFLOWS</span>
-          </div>
-          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
-            <span className="h-2 w-2 bg-[#111111]" />
-            <span>CUSTOMERS</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Center Tactical Workflow Banner */}
-      <div className="pointer-events-none absolute left-1/2 top-3 z-20 hidden -translate-x-1/2 border border-black/85 bg-white/95 px-4 py-1.5 font-mono shadow-sm lg:block">
-        <div className="flex items-center gap-2">
-          <span className="h-1.5 w-1.5 bg-[#e10600]" />
-          <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-black/80">
-            ACTIVE WORKFLOW LOOP: BUG TRIAGE ➔ DEV TASK ➔ OPTI INSIGHT ➔ QA SIGNOFF
+            THEME PALETTE:
           </span>
+          {(['samaritan', 'cyan', 'purple', 'crimson'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setThemeMode(mode)}
+              className={`h-4 w-4 rounded-none border transition-all ${
+                themeMode === mode
+                  ? themeColors.isLight
+                    ? 'border-black scale-125 shadow-[0_0_8px_rgba(225,6,0,0.5)]'
+                    : 'border-white scale-125 shadow-[0_0_8px_white]'
+                  : 'border-black/30 opacity-60 hover:opacity-100'
+              }`}
+              style={{
+                backgroundColor:
+                  mode === 'samaritan'
+                    ? '#ffffff'
+                    : mode === 'cyan'
+                    ? '#00f0ff'
+                    : mode === 'purple'
+                    ? '#d946ef'
+                    : '#e10600',
+                outline: mode === 'samaritan' ? '2px solid #e10600' : undefined,
+              }}
+              title={mode.toUpperCase()}
+            />
+          ))}
         </div>
+
+        {/* Rotation Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsRotating((r) => !r)}
+          className={`border px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur-md transition-all ${
+            themeColors.isLight
+              ? 'border-black/20 bg-white/85 text-black hover:border-black hover:bg-black hover:text-white shadow-sm'
+              : 'border-white/20 bg-black/60 text-white hover:border-white hover:bg-white hover:text-black'
+          }`}
+        >
+          {isRotating ? 'PAUSE ROTATION' : 'RESUME ROTATION'}
+        </button>
       </div>
 
-      {/* Right-Hand Tactical Target Dossier */}
-      <aside className="absolute right-0 top-0 z-20 flex h-full w-[310px] flex-col border-l border-black/90 bg-white/95 p-4 font-mono shadow-[-8px_0_24px_rgba(0,0,0,0.06)]">
-        <div className="mb-3 border-b border-black/90 pb-3">
-          <div className="flex items-center justify-between">
+      {/* Floating Center Notification on Hover */}
+      {hoveredId && nodeMap.get(hoveredId) && (
+        <div
+          className={`pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2 border px-4 py-1.5 font-mono shadow-md backdrop-blur-md ${
+            themeColors.isLight
+              ? 'border-black/30 bg-white/95 text-black shadow-black/10'
+              : 'border-cyan-400/40 bg-black/80 text-white shadow-[0_0_20px_rgba(0,240,255,0.3)]'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className="h-1.5 w-1.5 rounded-none"
+              style={{ backgroundColor: themeColors.isLight ? '#e10600' : '#00f0ff' }}
+            />
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {nodeMap.get(hoveredId)!.label}
+            </span>
+            <span
+              className={`text-[9px] uppercase tracking-widest ${
+                themeColors.isLight ? 'text-[#e10600] font-bold' : 'text-cyan-400'
+              }`}
+            >
+              [{nodeMap.get(hoveredId)!.kind}]
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Center Guidance Strip */}
+      <div
+        className={`pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2 font-mono text-[10px] uppercase tracking-[0.25em] ${
+          themeColors.isLight ? 'text-black/50 font-bold' : 'text-white/40'
+        }`}
+      >
+        [ DRAG TO ROTATE 3D SPHERE · SCROLL TO ZOOM · CLICK NODE TO INSPECT ]
+      </div>
+
+      {/* Right Hand Target Dossier */}
+      <aside
+        className={`absolute right-6 bottom-6 top-24 z-20 flex w-[320px] flex-col border p-5 font-mono shadow-lg backdrop-blur-xl transition-colors duration-200 ${
+          themeColors.isLight
+            ? 'border-black/20 bg-white/90 text-black shadow-black/10'
+            : 'border-white/20 bg-black/75 text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+        }`}
+      >
+        <div className={`border-b pb-3 ${themeColors.isLight ? 'border-black/15' : 'border-white/20'}`}>
+          <div className="flex items-center justify-between text-[9px] uppercase tracking-widest">
             <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 bg-[#e10600] lamp" />
-              <span className="text-[9px] uppercase tracking-widest text-black/60 font-bold">
+              <span
+                className="h-2 w-2 rounded-none lamp"
+                style={{ backgroundColor: themeColors.isLight ? '#e10600' : '#00f0ff' }}
+              />
+              <span className={`font-bold ${themeColors.isLight ? 'text-black/60' : 'text-white/60'}`}>
                 TARGET DOSSIER
               </span>
             </div>
-            <span className="text-[9px] text-[#1c7a43] font-bold">NODE: ONLINE</span>
+            <span className="text-[#1c7a43] font-bold">ONLINE</span>
           </div>
-          <h2 className="mt-2 font-display text-lg font-bold uppercase tracking-wider text-black">
-            {selectedNode?.label ?? 'SPIL Intelligence'}
+          <h2 className={`mt-2 text-base font-bold uppercase tracking-wider ${themeColors.isLight ? 'text-black' : 'text-white'}`}>
+            {selectedNode?.label ?? 'ROOT SYNAPSE'}
           </h2>
-          <p className="mt-0.5 text-[9px] uppercase tracking-widest text-black/50">
-            CLASS: {selectedNode?.kind ?? 'ROOT CORE'}
+          <p
+            className={`mt-0.5 text-[9px] uppercase tracking-widest ${
+              themeColors.isLight ? 'text-[#e10600] font-bold' : 'text-cyan-400'
+            }`}
+          >
+            CLASS: {selectedNode?.kind ?? 'CORE BRAIN'}
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {selectedNode ? (
-            <div className="space-y-3">
-              <div>
-                <div className="mb-1.5 flex items-center gap-2">
-                  <span
-                    className="h-2 w-2"
-                    style={{ background: nodeColors[selectedNode.kind] }}
-                  />
-                  <span className="border border-black/30 px-1.5 py-0.5 text-[9px] uppercase font-bold text-black">
-                    {selectedNode.kind}
-                  </span>
+        <div className="flex-1 overflow-y-auto space-y-4 pt-4 text-xs">
+          {selectedNode?.raw.description && (
+            <p
+              className={`border p-3 text-[11px] leading-relaxed ${
+                themeColors.isLight
+                  ? 'border-black/10 bg-black/[0.03] text-black/85'
+                  : 'border-white/10 bg-white/5 text-white/80'
+              }`}
+            >
+              {selectedNode.raw.description}
+            </p>
+          )}
+
+          {selectedNode?.raw.details && selectedNode.raw.details.length > 0 && (
+            <dl
+              className={`space-y-1.5 border p-3 text-[10px] ${
+                themeColors.isLight
+                  ? 'border-black/10 bg-black/[0.02]'
+                  : 'border-white/10 bg-white/5'
+              }`}
+            >
+              {selectedNode.raw.details.map((detail) => (
+                <div
+                  key={detail.label}
+                  className={`flex justify-between border-b pb-1 ${
+                    themeColors.isLight ? 'border-black/10' : 'border-white/10'
+                  }`}
+                >
+                  <dt className={`uppercase tracking-wider ${themeColors.isLight ? 'text-black/55' : 'text-white/50'}`}>
+                    {detail.label}
+                  </dt>
+                  <dd className={`font-bold ${themeColors.isLight ? 'text-black' : 'text-white'}`}>
+                    {detail.value}
+                  </dd>
                 </div>
-                {selectedNode.meta && (
-                  <p className="font-mono text-[9px] uppercase tracking-widest text-black/60">
-                    METRIC: {selectedNode.meta}
-                  </p>
-                )}
-              </div>
+              ))}
+            </dl>
+          )}
 
-              {selectedNode.description && (
-                <p className="border border-black/10 bg-black/[0.02] p-2 text-[11px] leading-relaxed text-black/80">
-                  {selectedNode.description}
-                </p>
-              )}
-
-              {selectedNode.details && selectedNode.details.length > 0 && (
-                <dl className="space-y-1.5 border border-black/20 bg-white p-2 text-[10px]">
-                  {selectedNode.details.map((detail) => (
-                    <div key={detail.label} className="flex justify-between gap-2 border-b border-black/[0.06] pb-1">
-                      <dt className="uppercase tracking-wider text-black/50">{detail.label}</dt>
-                      <dd className="text-right font-bold text-black">{detail.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-
-              {connectedNodes.length > 0 && (
-                <div>
-                  <p className="mb-1.5 font-mono text-[9px] uppercase tracking-widest text-black/60 font-bold">
-                    CONNECTED TARGETS // {connectedNodes.length}
-                  </p>
-                  <div className="max-h-36 space-y-1 overflow-y-auto">
-                    {connectedNodes.slice(0, 8).map((node) => (
-                      <button
-                        key={node.id}
-                        type="button"
-                        onClick={() => setSelectedId(node.id)}
-                        className="flex w-full items-center justify-between border border-black/15 bg-white px-2 py-1 text-left text-[10px] text-black hover:border-black hover:bg-black hover:text-white transition-all"
-                      >
-                        <span className="truncate font-semibold">{node.label}</span>
-                        <span className="text-[8px] uppercase tracking-wider opacity-60">
-                          {node.kind}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedNode.route && (
-                <Link to={selectedNode.route}>
+          {connectedNodes.length > 0 && (
+            <div>
+              <p
+                className={`mb-2 text-[9px] uppercase tracking-widest font-bold ${
+                  themeColors.isLight ? 'text-black/60' : 'text-white/50'
+                }`}
+              >
+                CONNECTED SYNAPSES ({connectedNodes.length})
+              </p>
+              <div className="max-h-40 space-y-1.5 overflow-y-auto pr-1">
+                {connectedNodes.slice(0, 10).map((cn) => (
                   <button
+                    key={cn.id}
                     type="button"
-                    className="mt-2 w-full border border-black bg-black px-3 py-1.5 text-center font-mono text-[9px] font-bold uppercase tracking-widest text-white hover:bg-[#e10600] hover:border-[#e10600] transition-colors"
+                    onClick={() => setSelectedId(cn.id)}
+                    className={`flex w-full items-center justify-between border px-2.5 py-1.5 text-left text-[10px] transition-all ${
+                      themeColors.isLight
+                        ? 'border-black/10 bg-black/[0.02] text-black hover:border-black hover:bg-black/5'
+                        : 'border-white/10 bg-white/5 text-white hover:border-cyan-400 hover:bg-cyan-950/40'
+                    }`}
                   >
-                    ACCESS ENTITY ➔
+                    <span className="truncate font-semibold">{cn.label}</span>
+                    <span
+                      className={`text-[8px] uppercase tracking-wider ${
+                        themeColors.isLight ? 'text-[#e10600] font-bold' : 'text-cyan-400'
+                      }`}
+                    >
+                      {cn.kind}
+                    </span>
                   </button>
-                </Link>
-              )}
+                ))}
+              </div>
             </div>
-          ) : (
-            <p className="text-[10px] text-black/40">SELECT NODE TO INITIALIZE DOSSIER.</p>
+          )}
+
+          {selectedNode?.raw.route && (
+            <Link to={selectedNode.raw.route} className="block pt-2">
+              <button
+                type="button"
+                className={`w-full border py-2 text-center font-mono text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  themeColors.isLight
+                    ? 'border-black bg-black text-white hover:bg-[#e10600] hover:border-[#e10600]'
+                    : 'border-cyan-400 bg-cyan-500/20 text-white hover:bg-cyan-400 hover:text-black'
+                }`}
+              >
+                OPEN WORKSPACE MODULE ➔
+              </button>
+            </Link>
           )}
         </div>
 
-        {/* Bottom Counts Strip */}
-        <div className="mt-3 border-t border-black/90 pt-3">
-          <div className="grid grid-cols-2 gap-1.5 text-[9px]">
-            {[
-              { label: 'DEPTS', value: counts.departments, color: '#e10600' },
-              { label: 'PEOPLE', value: counts.people, color: '#1c7a43' },
-              { label: 'LOOPS', value: counts.workflows, color: '#8a6a00' },
-              { label: 'LINKS', value: counts.links, color: '#111111' },
-            ].map((stat) => (
-              <div key={stat.label} className="border border-black/20 bg-white p-1.5">
-                <p className="uppercase tracking-widest text-black/50">{stat.label}</p>
-                <p className="mt-0.5 text-sm font-bold" style={{ color: stat.color }}>
-                  {stat.value}
-                </p>
-              </div>
-            ))}
+        {/* Quick Stats Grid */}
+        <div className={`mt-4 border-t pt-3 ${themeColors.isLight ? 'border-black/15' : 'border-white/20'}`}>
+          <div className="grid grid-cols-2 gap-2 text-[9px]">
+            <div
+              className={`border p-2 ${
+                themeColors.isLight
+                  ? 'border-black/10 bg-black/[0.02]'
+                  : 'border-white/10 bg-white/5'
+              }`}
+            >
+              <p className={`uppercase tracking-wider ${themeColors.isLight ? 'text-black/50' : 'text-white/40'}`}>
+                DEPARTMENTS
+              </p>
+              <p className={`text-sm font-bold ${themeColors.isLight ? 'text-[#e10600]' : 'text-cyan-400'}`}>
+                {counts.departments}
+              </p>
+            </div>
+            <div
+              className={`border p-2 ${
+                themeColors.isLight
+                  ? 'border-black/10 bg-black/[0.02]'
+                  : 'border-white/10 bg-white/5'
+              }`}
+            >
+              <p className={`uppercase tracking-wider ${themeColors.isLight ? 'text-black/50' : 'text-white/40'}`}>
+                PERSONNEL
+              </p>
+              <p className="text-sm font-bold text-[#1c7a43]">{counts.people}</p>
+            </div>
           </div>
         </div>
       </aside>
-    </>
+    </div>
   );
 }
