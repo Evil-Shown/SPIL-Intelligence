@@ -154,12 +154,29 @@ export function AiAssistant() {
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6">
         {idle ? (
           <div className="rise-in my-auto flex w-full max-w-lg flex-col items-center pb-10 text-center">
-            <div className="h-px w-[min(100%,380px)] bg-black" />
-            <p className="font-display my-[14px] text-[12px] font-medium lowercase tracking-[0.42em] sm:text-[14px]">
+            {/* Top Surgical Bounding Rule with End Crosshairs */}
+            <div className="relative flex w-full items-center justify-between">
+              <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+              <div className="h-px flex-1 bg-black/85 mx-1" />
+              <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+            </div>
+            <h2 className="font-display my-3 text-[16px] font-bold uppercase tracking-[0.48em] text-black sm:text-[18px]">
               what are your commands?
-            </p>
-            <div className="h-px w-[min(100%,380px)] bg-black" />
-            <div className="mt-3.5 h-0 w-0 border-x-[6px] border-x-transparent border-b-[9px] border-b-[#d10505]" />
+            </h2>
+            <div className="relative flex w-full items-center justify-between">
+              <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+              <div className="h-px flex-1 bg-black/85 mx-1" />
+              <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+            </div>
+            <div className="mt-4 flex items-center justify-center">
+              <svg
+                className="samaritan-pulse-red h-4 w-4 drop-shadow-[0_0_8px_rgba(225,6,0,0.65)]"
+                viewBox="0 0 100 86"
+                fill="#e10600"
+              >
+                <polygon points="50,0 100,86 0,86" />
+              </svg>
+            </div>
           </div>
         ) : (
           <div className="my-auto w-full max-w-[640px] space-y-6 py-10">

@@ -3,50 +3,71 @@ import { Link } from 'react-router-dom';
 import { DataNeuralGraph } from '../modules/DataNeuralGraph';
 import { streamChat } from '../../services/endpoints';
 
-const columns = [
-  { left: '2%', width: 92, duration: '46s', reverse: false, blur: 1.6 },
-  { left: '7%', width: 48, duration: '62s', reverse: true, blur: 0.6 },
-  { left: '12%', width: 28, duration: '38s', reverse: false, blur: 1.1 },
-  { left: '17%', width: 16, duration: '54s', reverse: true, blur: 0.4 },
-  { left: '22%', width: 10, duration: '70s', reverse: false, blur: 0.2 },
-  { left: '74%', width: 12, duration: '58s', reverse: true, blur: 0.3 },
-  { left: '79%', width: 34, duration: '42s', reverse: false, blur: 0.8 },
-  { left: '85%', width: 56, duration: '66s', reverse: true, blur: 1.4 },
-  { left: '91%', width: 24, duration: '34s', reverse: false, blur: 0.5 },
-  { left: '96%', width: 18, duration: '50s', reverse: true, blur: 1.2 },
+// ── High-Tech Samaritan Telemetry Stream ──────────────────────
+const telemetryColumns = [
+  { left: '2%', width: '42px', duration: '28s', reverse: false },
+  { left: '6%', width: '28px', duration: '34s', reverse: true },
+  { left: '10%', width: '36px', duration: '22s', reverse: false },
+  { left: '15%', width: '20px', duration: '40s', reverse: true },
+  { left: '84%', width: '22px', duration: '36s', reverse: true },
+  { left: '88%', width: '38px', duration: '24s', reverse: false },
+  { left: '92%', width: '26px', duration: '32s', reverse: true },
+  { left: '96%', width: '40px', duration: '26s', reverse: false },
 ];
 
-const barPattern = [6, 28, 4, 52, 11, 8, 36, 5, 18, 7, 44, 3, 22, 9, 14, 40];
+const telemetrySnippets = [
+  '0x7FA2 // OK',
+  'GEO_NET: 8092',
+  'SYS_CYCLE: 12ms',
+  'LAT 06°55\'N',
+  'LON 79°50\'E',
+  'KERNEL: ENFORCED',
+  'MEM: 4096-BIT',
+  'FEED: ACTIVE',
+  'PROPOSAL: GATED',
+  'AUDIT: WAL_ON',
+  'VECTOR: PG_IDLE',
+  'TARGET: CORE',
+];
 
 export function DataField() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      {columns.map((column) => (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden select-none" aria-hidden>
+      {/* Subtle fine coordinate grid dots */}
+      <div
+        className="absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
+      {/* Vertical Telemetry Streams */}
+      {telemetryColumns.map((col) => (
         <div
-          key={column.left}
-          className="data-drift absolute top-0 flex flex-col gap-3"
+          key={col.left}
+          className="data-drift absolute top-0 flex flex-col font-mono text-[8px] leading-tight text-black/25 uppercase tracking-widest"
           style={{
-            left: column.left,
-            width: column.width,
+            left: col.left,
+            width: col.width,
             height: '200%',
-            animationDuration: column.duration,
-            animationDirection: column.reverse ? 'reverse' : 'normal',
-            filter: `blur(${column.blur}px)`,
-            opacity: 0.55,
+            animationDuration: col.duration,
+            animationDirection: col.reverse ? 'reverse' : 'normal',
           }}
         >
           {[0, 1].map((copy) => (
-            <div key={copy} className="flex h-1/2 flex-col justify-around">
-              {barPattern.map((height, index) => (
-                <span
-                  key={`${copy}-${index}`}
-                  className="block bg-[#b9b9b9]"
-                  style={{
-                    height,
-                    width: index % 3 === 0 ? '100%' : index % 3 === 1 ? '62%' : '38%',
-                    marginLeft: index % 2 === 0 ? 0 : '18%',
-                  }}
-                />
+            <div key={copy} className="flex h-1/2 flex-col justify-between py-6">
+              {telemetrySnippets.map((text, i) => (
+                <div key={`${copy}-${i}`} className="my-1.5 flex flex-col gap-0.5">
+                  <span className="truncate opacity-75">{text}</span>
+                  <span
+                    className="block bg-black/15"
+                    style={{
+                      height: i % 3 === 0 ? '18px' : i % 2 === 0 ? '8px' : '4px',
+                      width: i % 2 === 0 ? '100%' : '55%',
+                    }}
+                  />
+                </div>
               ))}
             </div>
           ))}
@@ -56,7 +77,7 @@ export function DataField() {
   );
 }
 
-const links = [
+const navLinks = [
   { to: '/projects', label: 'Projects' },
   { to: '/knowledge', label: 'Knowledge' },
   { to: '/algorithms', label: 'Algorithms' },
@@ -66,26 +87,52 @@ const links = [
   { to: '/ai', label: 'AURA' },
 ];
 
+const directiveChips = [
+  { label: 'create task: fix arc fitting', text: 'create a task to fix the arc fitting bug, assign to Damitha, priority high' },
+  { label: 'publish decision ADR-004', text: 'publish decision ADR-004' },
+  { label: 'scan open bugs', text: 'search open bugs in geometry module' },
+  { label: 'system audit status', text: 'what is the system and kernel audit status?' },
+];
+
 export function CommandDeck() {
   const [command, setCommand] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [reply, setReply] = useState('');
   const [asked, setAsked] = useState('');
   const [waiting, setWaiting] = useState(false);
+  const [turnClass, setTurnClass] = useState<'read' | 'executed' | 'door'>('read');
+  const [timeUtc, setTimeUtc] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Live UTC high-precision clock
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const h = String(now.getUTCHours()).padStart(2, '0');
+      const m = String(now.getUTCMinutes()).padStart(2, '0');
+      const s = String(now.getUTCSeconds()).padStart(2, '0');
+      const ms = String(Math.floor(now.getUTCMilliseconds() / 10)).padStart(2, '0');
+      setTimeUtc(`${h}:${m}:${s}.${ms} UTC`);
+    };
+    updateTime();
+    const id = setInterval(updateTime, 50);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    const text = command.trim();
+  const submitCommand = async (textToSubmit?: string) => {
+    const text = (textToSubmit ?? command).trim();
     if (!text || waiting) return;
+
     setCommand('');
     setAsked(text);
     setReply('');
+    setTurnClass('read');
     setWaiting(true);
+
     let body = '';
     await streamChat(
       text,
@@ -94,83 +141,256 @@ export function CommandDeck() {
         body += delta;
         setReply(body);
       },
-      () => setWaiting(false),
-      () => setWaiting(false)
+      (_convId, executedClass) => {
+        if (executedClass === 'door') setTurnClass('door');
+        else if (executedClass === 'executed') setTurnClass('executed');
+        else setTurnClass('read');
+        setWaiting(false);
+      },
+      (err) => {
+        setReply(`[SYSTEM FAILURE] ${err}`);
+        setTurnClass('door');
+        setWaiting(false);
+      }
     );
   };
 
-  return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[#f7f7f7]">
-      <DataField />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.88) 22%, rgba(255,255,255,0.35) 48%, rgba(190,190,190,0.28) 100%)',
-        }}
-      />
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    submitCommand();
+  };
 
-      <div className="pointer-events-none absolute left-0 right-0 top-7 z-10 text-center font-display text-[11px] uppercase tracking-[0.62em] text-black/25">
-        SPIL
+  return (
+    <div className="samaritan-scanline relative flex h-full flex-col overflow-hidden bg-[#f4f4f4] text-black">
+      <DataField />
+
+      {/* Surveillance HUD Overlay Lines */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        {/* Subtle horizontal grid lines */}
+        <div className="absolute top-[8%] left-0 right-0 h-px bg-black/[0.06]" />
+        <div className="absolute bottom-[10%] left-0 right-0 h-px bg-black/[0.06]" />
+        {/* Subtle vertical alignment lines */}
+        <div className="absolute top-0 bottom-0 left-[20%] w-px bg-black/[0.04]" />
+        <div className="absolute top-0 bottom-0 right-[20%] w-px bg-black/[0.04]" />
       </div>
 
-      <div className="rise-in relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-6">
-        <form onSubmit={submit} className="flex w-full max-w-lg flex-col items-center text-center">
-          <div className="h-px w-[min(100%,380px)] bg-black" />
-          <label className="font-display my-[14px] block text-[12px] font-medium uppercase tracking-[0.5em] text-black sm:text-[14px]">
-            What are your commands?
-          </label>
-          <div className="h-px w-[min(100%,380px)] bg-black" />
-          <div className="mt-3.5 h-0 w-0 border-x-[6px] border-x-transparent border-b-[9px] border-b-[#d10505] drop-shadow-[0_1px_0_rgba(209,5,5,0.25)]" />
-          <input
-            ref={inputRef}
-            value={command}
-            onChange={(event) => setCommand(event.target.value)}
-            placeholder="Ask the company brain"
-            aria-label="Command"
-            disabled={waiting}
-            className="mt-6 w-full border-0 border-b border-transparent bg-transparent pb-1 text-center font-mono text-[12px] font-semibold uppercase tracking-[0.28em] text-black outline-none transition-colors placeholder:text-black/45 focus:border-black/40 disabled:opacity-40"
-          />
-        </form>
+      {/* ─── Top Telemetry Surveillance Bar ─── */}
+      <header className="relative z-10 flex items-center justify-between border-b border-black/[0.12] bg-white/70 px-6 py-2.5 backdrop-blur-sm font-mono text-[10px] tracking-[0.24em] uppercase text-black/60">
+        <div className="flex items-center gap-3">
+          <span className="flex h-2 w-2 items-center justify-center">
+            <span className="h-1.5 w-1.5 rounded-none bg-[#e10600] lamp" />
+          </span>
+          <span className="font-semibold text-black/90">SYS.ID: SAMARITAN // SPIL-AURA-CORE</span>
+          <span className="hidden sm:inline text-black/30">|</span>
+          <span className="hidden sm:inline text-black/50">NODE: SPIL-OPTI // PRIME</span>
+        </div>
 
-        <div className="mt-10 w-full max-w-[520px] border border-black/90 bg-white shadow-[0_24px_60px_rgba(0,0,0,0.07)]">
-          <div className="flex items-center justify-between border-b border-black/90 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.26em] text-black">
-            <span>Company brain online</span>
-            <span className="flex gap-[5px]">
-              <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" />
-              <i className="lamp block h-1.5 w-1.5 bg-[#d10505]" style={{ animationDelay: '1.1s' }} />
-            </span>
+        <div className="font-display tracking-[0.45em] text-[12px] font-semibold text-black/75">
+          SPIL INTELLIGENCE
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-black/80 font-bold">{timeUtc}</span>
+          <span className="hidden md:inline-block border border-black/20 bg-black/[0.04] px-1.5 py-0.5 text-[9px] text-[#1c7a43] font-bold">
+            SURVEILLANCE: ACTIVE
+          </span>
+        </div>
+      </header>
+
+      {/* ─── Center Command Console ─── */}
+      <div className="rise-in relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-6">
+        {/* Corner HUD Ticks */}
+        <div className="pointer-events-none relative flex w-full max-w-[620px] flex-col items-center">
+          <div className="absolute -top-6 -left-6 font-mono text-[9px] text-black/30 tracking-widest">
+            ┌ TARGET: CORE
           </div>
-          <div className="max-h-48 overflow-y-auto bg-[#0a0a0a] px-3.5 py-3.5 font-mono text-[12px] leading-relaxed text-white/95" aria-live="polite">
-            {asked && <p className="mb-2 uppercase tracking-[0.16em] text-white/55">&gt; {asked}</p>}
-            <div>
-              {waiting && !reply ? 'Reading workspace' : reply || 'Reading workspace'}
-              {(waiting || !reply) && <span className="caret-blink">_</span>}
-            </div>
-            <div className="mt-3 h-px w-full bg-white/15">
-              <div className="signal-load h-px bg-white" />
-            </div>
+          <div className="absolute -top-6 -right-6 font-mono text-[9px] text-black/30 tracking-widest">
+            LAT: 06°55'N ┐
           </div>
         </div>
 
-        <nav className="mt-9 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-3 font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-black/80">
-          {links.map((link, index) => (
-            <span key={link.to} className="flex items-center gap-3">
-              {index > 0 && <span className="font-normal text-black/35">/</span>}
-              <Link to={link.to} className="transition-colors hover:text-[#d10505]">
-                {link.label}
-              </Link>
-            </span>
+        {/* ─── The Iconic Samaritan Prompt ─── */}
+        <form onSubmit={submit} className="flex w-full max-w-[560px] flex-col items-center text-center">
+          {/* Top Surgical Bounding Rule with End Crosshairs */}
+          <div className="relative flex w-full items-center justify-between">
+            <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+            <div className="h-px flex-1 bg-black/85 mx-1" />
+            <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+          </div>
+
+          {/* The Big Samaritan Headline */}
+          <h1 className="font-display my-3 text-[16px] font-bold uppercase tracking-[0.48em] text-black sm:text-[20px] selection:bg-[#e10600] selection:text-white">
+            WHAT ARE YOUR COMMANDS?
+          </h1>
+
+          {/* Bottom Surgical Bounding Rule */}
+          <div className="relative flex w-full items-center justify-between">
+            <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+            <div className="h-px flex-1 bg-black/85 mx-1" />
+            <span className="font-mono text-[11px] leading-none text-black/40">+</span>
+          </div>
+
+          {/* Authentic Samaritan Red Triangle Cursor */}
+          <div className="mt-4 flex items-center justify-center">
+            <svg
+              className="samaritan-pulse-red h-4 w-4 drop-shadow-[0_0_8px_rgba(225,6,0,0.65)]"
+              viewBox="0 0 100 86"
+              fill="#e10600"
+            >
+              <polygon points="50,0 100,86 0,86" />
+            </svg>
+          </div>
+
+          {/* Precision Input Field with Framing Brackets */}
+          <div className="relative mt-4 w-full">
+            <div className="flex items-center border border-black/80 bg-white/95 px-3.5 py-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all focus-within:border-black focus-within:shadow-[0_6px_24px_rgba(0,0,0,0.12)]">
+              <span className="mr-2.5 font-mono text-[11px] font-bold text-[#e10600]">&gt;</span>
+              <input
+                ref={inputRef}
+                value={command}
+                onChange={(event) => setCommand(event.target.value)}
+                placeholder="INPUT DIRECTIVE OR QUERY COMPANY BRAIN..."
+                aria-label="Directive Input"
+                disabled={waiting}
+                className="w-full border-0 bg-transparent font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-black outline-none placeholder:text-black/35 disabled:opacity-40"
+              />
+              <button
+                type="submit"
+                disabled={waiting || !command.trim()}
+                className="ml-2 border border-black/30 bg-black px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-[#e10600] hover:border-[#e10600] disabled:opacity-20"
+              >
+                {waiting ? '...' : 'EXEC'}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        {/* Quick Suggestion Chips */}
+        <div className="mt-3 flex flex-wrap justify-center gap-1.5 max-w-lg">
+          {directiveChips.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => {
+                setCommand(chip.text);
+                submitCommand(chip.text);
+              }}
+              disabled={waiting}
+              className="border border-black/20 bg-white/80 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-black/70 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-40"
+            >
+              [ {chip.label} ]
+            </button>
           ))}
-          <span className="font-normal text-black/35">/</span>
-          <button type="button" onClick={() => setShowMap((open) => !open)} className="font-semibold transition-colors hover:text-[#d10505]">
-            {showMap ? 'Close map' : 'Map'}
+        </div>
+
+        {/* ─── Samaritan Execution Terminal Deck ─── */}
+        <div className="mt-6 w-full max-w-[620px] border border-black/90 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.1)]">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between border-b border-black/90 bg-[#f7f7f7] px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-black font-semibold">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 bg-[#e10600] lamp" />
+              <span>TERMINAL // AURA KERNEL STREAM</span>
+            </div>
+            <div className="flex items-center gap-3 text-[9px] text-black/50">
+              <span>STATUS: {waiting ? 'PROCESSING' : 'LISTENING'}</span>
+              <span className="flex gap-1">
+                <i className="lamp block h-1.5 w-1.5 bg-[#e10600]" />
+                <i className="lamp block h-1.5 w-1.5 bg-[#e10600]" style={{ animationDelay: '1s' }} />
+              </span>
+            </div>
+          </div>
+
+          {/* CRT Terminal Screen */}
+          <div
+            className="samaritan-terminal-scanline max-h-56 min-h-[120px] overflow-y-auto bg-[#07090b] p-4 font-mono text-[12px] leading-relaxed text-white/95"
+            aria-live="polite"
+          >
+            {asked && (
+              <p className="mb-2 uppercase tracking-[0.14em] text-white/50 border-b border-white/10 pb-1.5">
+                &gt; {asked}
+              </p>
+            )}
+
+            <div className="whitespace-pre-wrap">
+              {waiting && !reply ? (
+                <span className="text-white/60">
+                  INTERCEPTING DIRECTIVE · QUERYING KERNEL
+                  <span className="caret-blink text-[#e10600]"> █</span>
+                </span>
+              ) : (
+                reply || (
+                  <span className="text-white/40">
+                    AURA KERNEL INITIALIZED. STANDBY FOR DIRECTIVES.
+                    <span className="caret-blink text-[#e10600]"> █</span>
+                  </span>
+                )
+              )}
+              {waiting && reply && <span className="caret-blink text-[#e10600]"> █</span>}
+            </div>
+
+            {/* Dynamic Status Badges on Result */}
+            {!waiting && reply && (
+              <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] tracking-widest font-mono">
+                {turnClass === 'door' ? (
+                  <span className="text-[#ef4444] font-bold">
+                    [!] CRITICAL REFUSAL · REQUIRES HUMAN CONFIRMATION
+                  </span>
+                ) : turnClass === 'executed' ? (
+                  <span className="text-[#22d3ee] font-bold">
+                    [✓] EXECUTED · LOGGED IN EVENT STORE
+                  </span>
+                ) : (
+                  <span className="text-white/50">
+                    [i] TELEMETRY STREAM COMPLETED
+                  </span>
+                )}
+                <span className="text-white/40 uppercase">AWAITING.</span>
+              </div>
+            )}
+
+            {/* Signal loading line */}
+            {waiting && (
+              <div className="mt-3 h-0.5 w-full bg-white/15">
+                <div className="signal-load h-0.5 bg-[#e10600]" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ─── Bottom Navigation Deck ─── */}
+        <nav className="mt-6 flex max-w-2xl flex-wrap items-center justify-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-black/85">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="border border-black/20 bg-white/70 px-2.5 py-1 transition-all hover:bg-black hover:text-white hover:border-black"
+            >
+              {link.label}
+            </Link>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowMap((open) => !open)}
+            className="border border-black/90 bg-black text-white px-3 py-1 transition-all hover:bg-[#e10600] hover:border-[#e10600]"
+          >
+            {showMap ? '[ CLOSE MAP ]' : '[ NEURAL MAP ]'}
           </button>
         </nav>
       </div>
 
+      {/* ─── Collapsible Neural Knowledge Graph ─── */}
       {showMap && (
-        <div className="relative z-10 h-[46%] border-t border-black/10 bg-white">
+        <div className="relative z-20 h-[48%] border-t-2 border-black bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-black/80 bg-black px-4 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white">
+            <span>SPIL NEURAL KNOWLEDGE TOPOLOGY // 11 DEPARTMENTS</span>
+            <button
+              type="button"
+              onClick={() => setShowMap(false)}
+              className="text-[#e10600] hover:text-white font-bold"
+            >
+              ✕ CLOSE
+            </button>
+          </div>
           <DataNeuralGraph />
         </div>
       )}
