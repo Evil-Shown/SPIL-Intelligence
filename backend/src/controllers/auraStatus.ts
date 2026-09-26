@@ -32,7 +32,9 @@ export async function getAuraStatus(_req: Request, res: Response) {
       canvas: 'idle' as const,
       nesting: 'asleep' as const,
     },
-    proposals: { pending: counts.executed }, // Actual compensable executions
-    doors: { pending: counts.refused },     // Actual critical refusals
+    // Amber denotes awaiting human signoff. Compensable executions are cyan (executed. logged.).
+    // Until a Proposal entity exists in Phase 2, pending proposals is honestly 0.
+    proposals: { pending: 0 },
+    doors: { pending: counts.refused }, // Actual critical refusals recorded in event store
   });
 }

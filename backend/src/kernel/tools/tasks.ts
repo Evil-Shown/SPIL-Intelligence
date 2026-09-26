@@ -104,9 +104,14 @@ register({
   version: '1.0.0',
   handler: async (args) => {
     const { id, ...data } = args;
+    const existing = await prisma.task.findUnique({ where: { id: String(id) }, select: { firstTouchedAt: true } });
+    const updateData: Record<string, unknown> = { ...data };
+    if (existing && !existing.firstTouchedAt) {
+      updateData.firstTouchedAt = new Date();
+    }
     const item = await prisma.task.update({
       where: { id: String(id) },
-      data: data as Record<string, unknown>,
+      data: updateData,
       include: { project: { select: { id: true, name: true } } },
     });
     return serializeTask(item);
@@ -132,9 +137,16 @@ register({
   sideEffect: 'compensable',
   version: '1.0.0',
   handler: async (args) => {
+    const existing = await prisma.task.findUnique({ where: { id: String(args.id) }, select: { firstTouchedAt: true } });
+    const updateData: Record<string, unknown> = {
+      status: args.status as 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED',
+    };
+    if (existing && !existing.firstTouchedAt) {
+      updateData.firstTouchedAt = new Date();
+    }
     const item = await prisma.task.update({
       where: { id: String(args.id) },
-      data: { status: args.status as 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED' },
+      data: updateData,
       include: { project: { select: { id: true, name: true } } },
     });
     return serializeTask(item);

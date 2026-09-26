@@ -31,20 +31,36 @@ export async function createTask(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateTask(req: Request, res: Response): Promise<void> {
+  const id = getParam(req, 'id');
   const body = req.body as Record<string, unknown>;
   const data: Record<string, unknown> = { ...body };
   if (body.dueDate) {
     data.dueDate = new Date(body.dueDate as string);
   }
-  const item = await prisma.task.update({ where: { id: getParam(req, 'id') }, data });
+
+  // Stamp firstTouchedAt on first human edit if not already stamped
+  const existing = await prisma.task.findUnique({ where: { id }, select: { firstTouchedAt: true } });
+  if (existing && !existing.firstTouchedAt) {
+    data.firstTouchedAt = new Date();
+  }
+
+  const item = await prisma.task.update({ where: { id }, data });
   res.json(serializeTask(item));
 }
 
 export async function updateTaskStatus(req: Request, res: Response): Promise<void> {
+  const id = getParam(req, 'id');
   const { status } = req.body as { status: string };
+
+  const existing = await prisma.task.findUnique({ where: { id }, select: { firstTouchedAt: true } });
+  const data: Record<string, unknown> = { status: status as 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED' };
+  if (existing && !existing.firstTouchedAt) {
+    data.firstTouchedAt = new Date();
+  }
+
   const item = await prisma.task.update({
-    where: { id: getParam(req, 'id') },
-    data: { status: status as 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED' },
+    where: { id },
+    data,
   });
   res.json(serializeTask(item));
 }

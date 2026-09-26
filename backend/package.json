@@ -10,7 +10,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "db:backup": "tsx scripts/backup-db.ts",
+    "verify:kernel": "tsx src/verify-kernel.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -104,9 +104,14 @@ register({
   version: '1.0.0',
   handler: async (args) => {
     const { id, ...data } = args;
+    const existing = await prisma.bug.findUnique({ where: { id: String(id) }, select: { firstTouchedAt: true } });
+    const updateData: Record<string, unknown> = { ...data };
+    if (existing && !existing.firstTouchedAt) {
+      updateData.firstTouchedAt = new Date();
+    }
     const item = await prisma.bug.update({
       where: { id: String(id) },
-      data: data as Record<string, unknown>,
+      data: updateData,
       include: { project: { select: { id: true, name: true } } },
     });
     return serializeBug(item);

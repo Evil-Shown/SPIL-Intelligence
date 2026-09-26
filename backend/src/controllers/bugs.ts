@@ -31,9 +31,17 @@ export async function createBug(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateBug(req: Request, res: Response): Promise<void> {
+  const id = getParam(req, 'id');
+  const data = { ...req.body };
+
+  const existing = await prisma.bug.findUnique({ where: { id }, select: { firstTouchedAt: true } });
+  if (existing && !existing.firstTouchedAt) {
+    data.firstTouchedAt = new Date();
+  }
+
   const item = await prisma.bug.update({
-    where: { id: getParam(req, 'id') },
-    data: req.body,
+    where: { id },
+    data,
   });
   res.json(serializeBug(item));
 }

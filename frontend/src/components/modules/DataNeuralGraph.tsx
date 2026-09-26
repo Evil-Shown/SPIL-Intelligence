@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Maximize2, Network, RotateCcw, Sparkles, ZoomIn, ZoomOut } from 'lucide-react';
-import { APP_NAME, WORKSPACE_NAME } from '../../lib/constants';
+import { Activity } from 'lucide-react';
 import {
   type GraphKind,
   type GraphNode,
   type Point,
-  nodeBadgeVariant,
   nodeColors,
   useNeuralGraphData,
 } from '../../lib/companyBrainGraph';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
 
 const FPS_INTERVAL = 1000 / 60;
 
@@ -313,21 +309,6 @@ export function DataNeuralGraph() {
       };
     };
 
-    const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
-      const radius = Math.min(r, w / 2, h / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + w - radius, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-      ctx.lineTo(x + w, y + h - radius);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-      ctx.lineTo(x + radius, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-    };
-
     const drawJarvisRings = (cx: number, cy: number, timestamp: number, rgb: string, scale = 1) => {
       const rings = [
         { r: 52 * scale, speed: 0.0004, dash: [4, 8], width: 0.8, alpha: 0.35 },
@@ -431,51 +412,6 @@ export function DataNeuralGraph() {
         ctx.lineWidth = Math.max(0.7, lineWidth * 0.8);
         ctx.stroke();
       }
-      ctx.restore();
-    };
-
-    const drawJarvisCore = (
-      x: number,
-      y: number,
-      r: number,
-      timestamp: number,
-      pulseRgb: string,
-      neuralRgb: string
-    ) => {
-      drawJarvisRings(x, y, timestamp, pulseRgb, r / 19);
-
-      const coreGlow = ctx.createRadialGradient(x, y, 0, x, y, r * 3.5);
-      coreGlow.addColorStop(0, `rgba(${pulseRgb}, 0.35)`);
-      coreGlow.addColorStop(1, `rgba(${pulseRgb}, 0)`);
-      ctx.fillStyle = coreGlow;
-      ctx.beginPath();
-      ctx.arc(x, y, r * 3.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(x, y, r + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${pulseRgb}, 0.7)`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${pulseRgb}, 0.15)`;
-      ctx.fill();
-      ctx.strokeStyle = `rgba(${pulseRgb}, 0.95)`;
-      ctx.lineWidth = 1.8;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(x, y, r * 0.28, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${neuralRgb}, 1)`;
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x, y, r * 0.12, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-    };
-
     const drawClusterHalo = (node: RenderNode, timestamp: number, _rgb: string, focused: boolean) => {
       if (node.kind === 'workspace') return;
       const base = node.kind === 'department' ? node.radius * 3.8 : node.radius * 2.8;
@@ -494,13 +430,13 @@ export function DataNeuralGraph() {
     const drawNode = (
       node: RenderNode,
       active: boolean,
-      timestamp: number,
+      _timestamp: number,
       neuralRgb: string,
       pulseRgb: string,
       violetRgb: string,
       riskRgb: string,
-      labelPrimary: string,
-      labelSecondary: string
+      _labelPrimary: string,
+      _labelSecondary: string
     ) => {
       const rgb = kindRgb(node.kind, neuralRgb, pulseRgb, violetRgb, riskRgb);
       const r = node.radius;

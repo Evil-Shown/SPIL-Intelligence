@@ -40,13 +40,20 @@ export async function createDecision(req: Request, res: Response): Promise<void>
 }
 
 export async function updateDecision(req: Request, res: Response): Promise<void> {
+  const id = getParam(req, 'id');
   const body = req.body as Record<string, unknown>;
   const data: Record<string, unknown> = { ...body };
   if (Array.isArray(body.affectedModules)) {
     data.affectedModules = toJsonArray(body.affectedModules as string[]);
   }
+
+  const existing = await prisma.decision.findUnique({ where: { id }, select: { firstTouchedAt: true } });
+  if (existing && !existing.firstTouchedAt) {
+    data.firstTouchedAt = new Date();
+  }
+
   const item = await prisma.decision.update({
-    where: { id: getParam(req, 'id') },
+    where: { id },
     data,
   });
   res.json(serializeDecision(item));
