@@ -123,6 +123,17 @@ export function CommandDeck() {
     inputRef.current?.focus();
   }, []);
 
+  // Escape key closes full-screen map
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showMap) {
+        setShowMap(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showMap]);
+
   const submitCommand = async (textToSubmit?: string) => {
     const text = (textToSubmit ?? command).trim();
     if (!text || waiting) return;
@@ -283,15 +294,15 @@ export function CommandDeck() {
           ))}
         </div>
 
-        {/* ─── Samaritan Execution Terminal Deck ─── */}
-        <div className="mt-6 w-full max-w-[620px] border border-black/90 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.1)]">
-          {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-black/90 bg-[#f7f7f7] px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-black font-semibold">
+        {/* ─── Samaritan Execution Terminal Deck (PITCH BLACK) ─── */}
+        <div className="mt-6 w-full max-w-[620px] border-2 border-black bg-black shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+          {/* Pitch Black Header Bar */}
+          <div className="flex items-center justify-between border-b border-white/20 bg-black px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white font-bold">
             <div className="flex items-center gap-2">
               <span className="inline-block h-2 w-2 bg-[#e10600] lamp" />
-              <span>TERMINAL // AURA KERNEL STREAM</span>
+              <span className="text-white">TERMINAL // AURA KERNEL STREAM</span>
             </div>
-            <div className="flex items-center gap-3 text-[9px] text-black/50">
+            <div className="flex items-center gap-3 text-[9px] text-white/70">
               <span>STATUS: {waiting ? 'PROCESSING' : 'LISTENING'}</span>
               <span className="flex gap-1">
                 <i className="lamp block h-1.5 w-1.5 bg-[#e10600]" />
@@ -300,26 +311,26 @@ export function CommandDeck() {
             </div>
           </div>
 
-          {/* CRT Terminal Screen */}
+          {/* Solid Pitch Black Terminal Screen */}
           <div
-            className="samaritan-terminal-scanline max-h-56 min-h-[120px] overflow-y-auto bg-[#07090b] p-4 font-mono text-[12px] leading-relaxed text-white/95"
+            className="max-h-56 min-h-[130px] overflow-y-auto bg-black p-4 font-mono text-[12px] font-bold leading-relaxed text-white selection:bg-[#e10600] selection:text-white"
             aria-live="polite"
           >
             {asked && (
-              <p className="mb-2 uppercase tracking-[0.14em] text-white/50 border-b border-white/10 pb-1.5">
+              <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-white/80 border-b border-white/20 pb-1.5">
                 &gt; {asked}
               </p>
             )}
 
-            <div className="whitespace-pre-wrap">
+            <div className="whitespace-pre-wrap font-mono text-[12px] font-bold tracking-wide text-white">
               {waiting && !reply ? (
-                <span className="text-white/60">
+                <span className="font-bold text-white">
                   INTERCEPTING DIRECTIVE · QUERYING KERNEL
                   <span className="caret-blink text-[#e10600]"> █</span>
                 </span>
               ) : (
                 reply || (
-                  <span className="text-white/40">
+                  <span className="font-bold text-white">
                     AURA KERNEL INITIALIZED. STANDBY FOR DIRECTIVES.
                     <span className="caret-blink text-[#e10600]"> █</span>
                   </span>
@@ -330,27 +341,27 @@ export function CommandDeck() {
 
             {/* Dynamic Status Badges on Result */}
             {!waiting && reply && (
-              <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] tracking-widest font-mono">
+              <div className="mt-3 pt-2 border-t border-white/20 flex items-center justify-between text-[10px] tracking-widest font-mono">
                 {turnClass === 'door' ? (
-                  <span className="text-[#ef4444] font-bold">
+                  <span className="text-[#e10600] font-bold">
                     [!] CRITICAL REFUSAL · REQUIRES HUMAN CONFIRMATION
                   </span>
                 ) : turnClass === 'executed' ? (
-                  <span className="text-[#22d3ee] font-bold">
+                  <span className="text-[#22c55e] font-bold">
                     [✓] EXECUTED · LOGGED IN EVENT STORE
                   </span>
                 ) : (
-                  <span className="text-white/50">
+                  <span className="text-white/70 font-bold">
                     [i] TELEMETRY STREAM COMPLETED
                   </span>
                 )}
-                <span className="text-white/40 uppercase">AWAITING.</span>
+                <span className="text-white/50 uppercase font-bold">AWAITING.</span>
               </div>
             )}
 
             {/* Signal loading line */}
             {waiting && (
-              <div className="mt-3 h-0.5 w-full bg-white/15">
+              <div className="mt-3 h-0.5 w-full bg-white/20">
                 <div className="signal-load h-0.5 bg-[#e10600]" />
               </div>
             )}
@@ -378,20 +389,36 @@ export function CommandDeck() {
         </nav>
       </div>
 
-      {/* ─── Collapsible Neural Knowledge Graph ─── */}
+      {/* ─── Full-Screen Samaritan Neural Knowledge Topology ─── */}
       {showMap && (
-        <div className="relative z-20 h-[48%] border-t-2 border-black bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-black/80 bg-black px-4 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white">
-            <span>SPIL NEURAL KNOWLEDGE TOPOLOGY // 11 DEPARTMENTS</span>
-            <button
-              type="button"
-              onClick={() => setShowMap(false)}
-              className="text-[#e10600] hover:text-white font-bold"
-            >
-              ✕ CLOSE
-            </button>
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f4f4] text-black">
+          {/* Tactical Top Bar */}
+          <div className="flex h-10 items-center justify-between border-b border-black bg-black px-4 font-mono text-[10px] uppercase tracking-widest text-white shadow-md">
+            <div className="flex items-center gap-3">
+              <span className="h-2 w-2 bg-[#e10600] lamp" />
+              <span className="font-bold tracking-[0.24em]">
+                SPIL NEURAL KNOWLEDGE TOPOLOGY // 11 DEPARTMENTS // SYSTEM: ENFORCED
+              </span>
+              <span className="hidden md:inline border border-white/20 bg-white/10 px-2 py-0.5 text-[9px] text-[#22c55e]">
+                FULL-FIELD SURVEILLANCE
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="hidden sm:inline font-mono text-[9px] text-white/50">
+                [ESC OR CLICK TO EXIT]
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowMap(false)}
+                className="border border-[#e10600] bg-[#e10600] px-3 py-1 font-mono text-[10px] font-bold text-white hover:bg-white hover:text-black hover:border-white transition-colors"
+              >
+                ✕ CLOSE MAP [ESC]
+              </button>
+            </div>
           </div>
-          <DataNeuralGraph />
+          <div className="relative flex-1 w-full h-[calc(100vh-40px)] overflow-hidden">
+            <DataNeuralGraph />
+          </div>
         </div>
       )}
     </div>

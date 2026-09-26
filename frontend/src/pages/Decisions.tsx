@@ -58,18 +58,49 @@ export function Decisions() {
           ))}
         </div>
       ) : (
-        <div className="border-t border-black/15">
+        <div className="grid grid-cols-1 gap-3">
           {filtered?.map((decision) => (
-            <article key={decision.id} className="border-b border-black/10 py-5">
-              <div className="flex items-baseline justify-between gap-6">
-                <h2 className="font-display text-lg tracking-wide text-black">{decision.title}</h2>
-                <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-black/70">
-                  ADR-{String(decision.number).padStart(3, '0')} · {decision.status.replace('_', ' ')}
+            <article
+              key={decision.id}
+              className="group relative border border-black/80 bg-white p-4 shadow-none transition-all hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            >
+              {/* Corner crosshairs */}
+              <span className="absolute -top-[3px] -left-[3px] font-mono text-[8px] leading-none text-black/40 select-none">
+                +
+              </span>
+              <span className="absolute -top-[3px] -right-[3px] font-mono text-[8px] leading-none text-black/40 select-none">
+                +
+              </span>
+
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[10px] font-bold text-[#e10600]">
+                    ADR-{String(decision.number).padStart(3, '0')}
+                  </span>
+                  <h2 className="font-mono text-base font-bold uppercase tracking-wide text-black group-hover:text-[#e10600] transition-colors">
+                    {decision.title}
+                  </h2>
+                </div>
+                <span className="border border-black/40 bg-black/5 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-black/80">
+                  {decision.status.replace('_', ' ')}
                 </span>
               </div>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-black/55">{decision.decision}</p>
-              {decision.reason && <p className="mt-1 max-w-xl text-sm text-black/40">{decision.reason}</p>}
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-black/35">{formatDate(decision.createdAt)}</p>
+
+              <p className="mt-2 text-xs leading-relaxed text-black/75 font-sans">
+                {decision.decision}
+              </p>
+              {decision.reason && (
+                <p className="mt-1 text-xs text-black/50 font-sans italic">
+                  Rationale: {decision.reason}
+                </p>
+              )}
+
+              <div className="mt-3 flex items-center justify-between border-t border-black/10 pt-2 font-mono text-[9px] uppercase tracking-[0.14em] text-black/40">
+                <span>RATIFIED: {formatDate(decision.createdAt)}</span>
+                <span className="text-[#e10600] opacity-0 group-hover:opacity-100 transition-opacity">
+                  RECORD VERIFIED ➔
+                </span>
+              </div>
             </article>
           ))}
         </div>

@@ -16,188 +16,195 @@ import {
   Menu,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { APP_NAME, USER_NAME, USER_ROLE, WORKSPACE_NAME } from '../../lib/constants';
+import { APP_NAME, USER_NAME, USER_ROLE } from '../../lib/constants';
 import { useUiStore } from '../../store/uiStore';
 
 const navSections = [
   {
-    label: 'Workspace',
+    label: 'WORKSPACE',
+    code: '01',
     items: [
-      { to: '/', icon: Home, label: 'Home' },
-      { to: '/projects', icon: FolderKanban, label: 'Projects' },
-      { to: '/knowledge', icon: Brain, label: 'Knowledge' },
+      { to: '/', icon: Home, label: 'COMMAND DECK', tag: 'CORE' },
+      { to: '/projects', icon: FolderKanban, label: 'PROJECTS', tag: 'PRJ' },
+      { to: '/knowledge', icon: Brain, label: 'KNOWLEDGE', tag: 'KNOW' },
     ],
   },
   {
-    label: 'Engineering',
+    label: 'ENGINEERING',
+    code: '02',
     items: [
-      { to: '/research', icon: FlaskConical, label: 'Research' },
-      { to: '/ideas', icon: Lightbulb, label: 'Ideas' },
-      { to: '/algorithms', icon: BookOpen, label: 'Algorithms' },
-      { to: '/decisions', icon: FileText, label: 'Decisions' },
+      { to: '/research', icon: FlaskConical, label: 'RESEARCH LAB', tag: 'R&D' },
+      { to: '/ideas', icon: Lightbulb, label: 'INNOVATION', tag: 'IDEA' },
+      { to: '/algorithms', icon: BookOpen, label: 'ALGORITHMS', tag: 'GEO' },
+      { to: '/decisions', icon: FileText, label: 'DECISIONS', tag: 'ADR' },
     ],
   },
   {
-    label: 'Work',
+    label: 'OPERATIONS',
+    code: '03',
     items: [
-      { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
-      { to: '/bugs', icon: Bug, label: 'Bugs' },
-      { to: '/documents', icon: Files, label: 'Documents' },
+      { to: '/tasks', icon: CheckSquare, label: 'TASKS MATRIX', tag: 'TSK' },
+      { to: '/bugs', icon: Bug, label: 'DEFECTS', tag: 'BUG' },
+      { to: '/documents', icon: Files, label: 'DOCUMENTS', tag: 'DOC' },
     ],
   },
   {
-    label: 'AI',
-    items: [{ to: '/ai', icon: Bot, label: 'AI Assistant' }],
+    label: 'COGNITIVE',
+    code: '04',
+    items: [{ to: '/ai', icon: Bot, label: 'AURA TERMINAL', tag: 'AI' }],
   },
   {
-    label: 'System',
-    items: [{ to: '/settings', icon: Settings, label: 'Settings' }],
+    label: 'SYSTEM',
+    code: '05',
+    items: [{ to: '/settings', icon: Settings, label: 'GOVERNANCE', tag: 'CFG' }],
   },
 ];
 
 export function Sidebar() {
-  const { sidebarCollapsed, sidebarMobileOpen, neuralPulse, toggleSidebar, setSidebarMobileOpen } =
+  const { sidebarCollapsed, sidebarMobileOpen, toggleSidebar, setSidebarMobileOpen } =
     useUiStore();
 
   return (
     <>
       <button
-        className="fixed left-4 top-4 z-50 rounded-lg border border-subtle bg-surface/80 p-2 text-secondary backdrop-blur-md lg:hidden"
+        className="fixed left-3 top-3 z-50 border border-black/80 bg-white p-2 text-black shadow-md lg:hidden"
         onClick={() => setSidebarMobileOpen(!sidebarMobileOpen)}
         aria-label="Toggle menu"
       >
-        <Menu size={20} />
+        <Menu size={18} />
       </button>
 
       {sidebarMobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-backdrop backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden"
           onClick={() => setSidebarMobileOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 flex h-full flex-col border-r border-black/10 transition-all duration-300',
-          'bg-white',
-          sidebarCollapsed ? 'w-16' : 'w-60',
+          'fixed left-0 top-0 z-40 flex h-full flex-col border-r border-black/90 bg-[#fafafa] font-mono transition-all duration-300',
+          sidebarCollapsed ? 'w-16' : 'w-64',
           sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
-        {/* Logo */}
+        {/* ─── Header: Samaritan Logo Bar ─── */}
         <div
           className={cn(
-            'flex items-center gap-3 border-b border-subtle px-4 py-5',
+            'flex items-center gap-2.5 border-b border-black/90 bg-white px-4 py-3.5',
             sidebarCollapsed && 'justify-center px-2'
           )}
         >
-          <div
-            className={cn(
-              'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-              'bg-neural-trace border border-active/40',
-              neuralPulse && 'neural-logo-pulse'
-            )}
-          >
-            <div className="h-3 w-3 rounded-full bg-neural-core shadow-[0_0_10px_var(--neural-core)]" />
-            <div className="absolute -inset-px rounded-lg opacity-30 bg-gradient-to-br from-neural-core/30 to-transparent" />
-          </div>
+          <span className="h-2.5 w-2.5 shrink-0 bg-[#e10600] lamp shadow-[0_0_8px_#e10600]" />
           {!sidebarCollapsed && (
-            <div className="min-w-0">
-              <div className="hud-title text-sm text-[var(--samaritan)]">{APP_NAME}</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/50">
-                {WORKSPACE_NAME}
-              </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-sm font-bold tracking-[0.22em] text-black">
+                {APP_NAME}
+              </h1>
+              <p className="text-[9px] uppercase tracking-widest text-black/50">
+                // SAMARITAN CORE v1.1
+              </p>
             </div>
           )}
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
+        {/* ─── Navigation Tree ─── */}
+        <div className="flex-1 overflow-y-auto px-2 py-3">
           {navSections.map((section) => (
-            <div key={section.label} className="mb-1">
-              {!sidebarCollapsed && (
-                <div className="mb-1 mt-5 px-3 font-mono text-[9px] uppercase tracking-[0.2em] text-muted first:mt-1">
-                  {section.label}
+            <div key={section.label} className="mb-4">
+              {!sidebarCollapsed ? (
+                <div className="mb-1.5 flex items-center justify-between px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-black/40">
+                  <span>// {section.code} {section.label}</span>
+                  <span className="h-px flex-1 bg-black/10 ml-2" />
                 </div>
+              ) : (
+                <div className="my-2 h-px bg-black/10" />
               )}
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  onClick={() => setSidebarMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'group mb-0.5 flex items-center gap-3 rounded-none px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.14em] transition-all duration-150',
-                      'text-muted hover:bg-elevated hover:text-primary',
-                      isActive && 'bg-neural-trace text-neural border-l-2 border-neural-core shadow-[inset_0_0_12px_var(--neural-trace)]',
-                      sidebarCollapsed && 'justify-center px-2'
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <item.icon
-                        size={18}
-                        className={cn(
-                          'shrink-0 transition-all duration-200',
-                          isActive
-                            ? 'text-neural drop-shadow-[0_0_6px_var(--neural-core)]'
-                            : 'group-hover:text-primary'
+
+              <nav className="space-y-0.5">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'group flex items-center gap-2.5 border border-transparent px-2.5 py-1.5 text-[11px] font-semibold tracking-wider transition-all',
+                        sidebarCollapsed && 'justify-center px-2',
+                        isActive
+                          ? 'border-black bg-black text-white'
+                          : 'text-black/75 hover:border-black/30 hover:bg-black/[0.04] hover:text-black'
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon
+                          size={14}
+                          className={cn(
+                            'shrink-0 transition-colors',
+                            isActive ? 'text-[#e10600]' : 'text-black/60 group-hover:text-black'
+                          )}
+                        />
+                        {!sidebarCollapsed && (
+                          <div className="flex min-w-0 flex-1 items-center justify-between">
+                            <span className="truncate">{item.label}</span>
+                            <span
+                              className={cn(
+                                'text-[8px] font-mono tracking-widest uppercase px-1 py-0.2',
+                                isActive
+                                  ? 'bg-[#e10600] text-white font-bold'
+                                  : 'text-black/40 group-hover:text-black'
+                              )}
+                            >
+                              {isActive ? '➔' : item.tag}
+                            </span>
+                          </div>
                         )}
-                      />
-                      {!sidebarCollapsed && (
-                        <span className="font-medium tracking-wide">{item.label}</span>
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </nav>
             </div>
           ))}
-        </nav>
+        </div>
 
-        {/* User */}
-        <div className="border-t border-subtle p-3">
+        {/* ─── Footer: Tactical Operator Clearance ─── */}
+        <div className="border-t border-black/90 bg-white p-3 text-[10px]">
           {!sidebarCollapsed ? (
-            <div className="flex items-center gap-3 border border-black/10 bg-[#fafafa] p-3">
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-active/40 font-mono text-xs font-bold text-neural"
-                style={{ background: 'radial-gradient(circle, var(--neural-trace), var(--bg-elevated))' }}
-              >
-                D
+            <div>
+              <div className="flex items-center justify-between border-b border-black/10 pb-1.5 text-[9px] uppercase tracking-widest text-black/50 font-bold">
+                <span>OPERATOR CLEARANCE</span>
+                <span className="text-[#1c7a43] font-bold">LVL 4</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-semibold text-primary">{USER_NAME}</div>
-                <div className="truncate font-mono text-[9px] uppercase tracking-widest text-muted">
-                  {USER_ROLE}
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center border border-black bg-black text-white font-mono text-xs font-bold">
+                  D
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold text-black uppercase tracking-wider">{USER_NAME}</p>
+                  <p className="truncate text-[8px] text-black/50 uppercase tracking-widest">{USER_ROLE}</p>
                 </div>
               </div>
-              <div className="h-2 w-2 rounded-full bg-status-active shadow-[0_0_6px_var(--status-active)]" />
             </div>
           ) : (
             <div className="flex justify-center">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-active/40 font-mono text-xs font-bold text-neural"
-                style={{ background: 'radial-gradient(circle, var(--neural-trace), var(--bg-elevated))' }}
-              >
-                D
-              </div>
+              <span className="h-2 w-2 bg-[#1c7a43]" />
             </div>
           )}
-        </div>
 
-        {/* Collapse toggle */}
-        <button
-          onClick={toggleSidebar}
-          className="hidden border-t border-subtle p-3 text-muted transition-colors hover:text-neural lg:block"
-          aria-label="Collapse sidebar"
-        >
-          <ChevronLeft
-            size={16}
-            className={cn('mx-auto transition-transform duration-300', sidebarCollapsed && 'rotate-180')}
-          />
-        </button>
+          {/* Collapse Toggle */}
+          <button
+            onClick={toggleSidebar}
+            className="mt-2.5 flex w-full items-center justify-center border border-black/20 bg-[#f4f4f4] py-1 text-[9px] uppercase font-bold tracking-widest text-black/70 hover:bg-black hover:text-white transition-all"
+          >
+            <ChevronLeft
+              size={12}
+              className={cn('transition-transform', sidebarCollapsed && 'rotate-180')}
+            />
+            {!sidebarCollapsed && <span className="ml-1">COLLAPSE HUD</span>}
+          </button>
+        </div>
       </aside>
     </>
   );

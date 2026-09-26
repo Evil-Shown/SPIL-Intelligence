@@ -256,58 +256,43 @@ export function DataNeuralGraph() {
       signalsRef.current.push({ linkId: link.id, progress: 0, startTime: performance.now() });
     };
 
-    const drawJarvisBackground = (w: number, h: number, neuralRgb: string, timestamp: number) => {
-      const bg = getCssVar('--bg-base', '#f1f5f9');
-      ctx.fillStyle = bg;
+    const drawJarvisBackground = (w: number, h: number, _neuralRgb: string, timestamp: number) => {
+      // Clean clinical Samaritan background
+      ctx.fillStyle = '#fafafa';
       ctx.fillRect(0, 0, w, h);
 
-      const wash = ctx.createLinearGradient(0, 0, w, h);
-      wash.addColorStop(0, `rgba(${neuralRgb}, 0.075)`);
-      wash.addColorStop(0.32, 'rgba(255,255,255,0)');
-      wash.addColorStop(0.72, 'rgba(245,157,118,0.035)');
-      wash.addColorStop(1, 'rgba(167,139,250,0.07)');
-      ctx.fillStyle = wash;
-      ctx.fillRect(0, 0, w, h);
-
-      const auroraA = ctx.createRadialGradient(w * 0.2, h * 0.18, 0, w * 0.2, h * 0.18, w * 0.55);
-      auroraA.addColorStop(0, `rgba(${neuralRgb}, 0.09)`);
-      auroraA.addColorStop(0.5, `rgba(${neuralRgb}, 0.025)`);
-      auroraA.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = auroraA;
-      ctx.fillRect(0, 0, w, h);
-
-      const auroraB = ctx.createRadialGradient(w * 0.82, h * 0.78, 0, w * 0.82, h * 0.78, w * 0.48);
-      auroraB.addColorStop(0, 'rgba(167,139,250,0.09)');
-      auroraB.addColorStop(0.55, 'rgba(167,139,250,0.025)');
-      auroraB.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = auroraB;
-      ctx.fillRect(0, 0, w, h);
-
-      const gridColor = getCssVar('--graph-grid', 'rgba(8,145,178,0.12)');
-      const spacing = 32;
-      ctx.fillStyle = gridColor;
+      // Precision surveillance grid
+      const spacing = 48;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
       for (let x = 0; x < w; x += spacing) {
-        for (let y = 0; y < h; y += spacing) {
-          ctx.beginPath();
-          ctx.arc(x, y, 0.6, 0, Math.PI * 2);
-          ctx.fill();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+      }
+      for (let y = 0; y < h; y += spacing) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+
+      // Precision crosshairs at every intersection
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.font = '8px "Share Tech Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let x = spacing; x < w; x += spacing * 2) {
+        for (let y = spacing; y < h; y += spacing * 2) {
+          ctx.fillText('+', x, y);
         }
       }
 
-      const cx = w * 0.5;
-      const cy = h * 0.5;
-      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.55);
-      glow.addColorStop(0, `rgba(${neuralRgb}, 0.13)`);
-      glow.addColorStop(0.42, `rgba(${neuralRgb}, 0.035)`);
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, w, h);
-
-      const scanY = ((timestamp / 40) % (h + 120)) - 60;
-      const scan = ctx.createLinearGradient(0, scanY - 40, 0, scanY + 40);
-      scan.addColorStop(0, 'rgba(255,255,255,0)');
-      scan.addColorStop(0.5, `rgba(${neuralRgb}, 0.04)`);
-      scan.addColorStop(1, 'rgba(255,255,255,0)');
+      // Tactical scanline sweep
+      const scanY = ((timestamp / 25) % (h + 100)) - 50;
+      const scan = ctx.createLinearGradient(0, scanY - 30, 0, scanY + 30);
+      scan.addColorStop(0, 'rgba(225, 6, 0, 0)');
+      scan.addColorStop(0.5, 'rgba(225, 6, 0, 0.03)');
+      scan.addColorStop(1, 'rgba(225, 6, 0, 0)');
       ctx.fillStyle = scan;
       ctx.fillRect(0, 0, w, h);
     };
@@ -410,7 +395,7 @@ export function DataNeuralGraph() {
       to: Point,
       opacity: number,
       lineWidth: number,
-      rgb: string,
+      _rgb: string,
       curveOffset: number,
       active = false
     ) => {
@@ -422,28 +407,31 @@ export function DataNeuralGraph() {
       const nx = -dy / len;
       const ny = dx / len;
 
-      const gradient = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-      gradient.addColorStop(0, `rgba(${rgb}, ${opacity * 0.3})`);
-      gradient.addColorStop(0.5, `rgba(${rgb}, ${opacity})`);
-      gradient.addColorStop(1, `rgba(${rgb}, ${opacity * 0.25})`);
-
+      ctx.save();
       if (active) {
+        // Active tactical selection link
         ctx.beginPath();
         ctx.moveTo(from.x, from.y);
         ctx.quadraticCurveTo(mx + nx * curveOffset, my + ny * curveOffset, to.x, to.y);
-        ctx.strokeStyle = `rgba(${rgb}, 0.12)`;
-        ctx.lineWidth = lineWidth + 5;
-        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#e10600';
+        ctx.lineWidth = Math.max(1.5, lineWidth);
+        ctx.stroke();
+
+        // Directional midpoint pip
+        const midX = (from.x + to.x) / 2 + nx * curveOffset * 0.5;
+        const midY = (from.y + to.y) / 2 + ny * curveOffset * 0.5;
+        ctx.fillStyle = '#e10600';
+        ctx.fillRect(midX - 2, midY - 2, 4, 4);
+      } else {
+        // High-contrast subtle tactical link
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.quadraticCurveTo(mx + nx * curveOffset, my + ny * curveOffset, to.x, to.y);
+        ctx.strokeStyle = `rgba(0, 0, 0, ${Math.min(0.35, opacity * 0.45)})`;
+        ctx.lineWidth = Math.max(0.7, lineWidth * 0.8);
         ctx.stroke();
       }
-
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.quadraticCurveTo(mx + nx * curveOffset, my + ny * curveOffset, to.x, to.y);
-      ctx.strokeStyle = gradient;
-      ctx.lineWidth = lineWidth;
-      ctx.lineCap = 'round';
-      ctx.stroke();
+      ctx.restore();
     };
 
     const drawJarvisCore = (
@@ -488,32 +476,19 @@ export function DataNeuralGraph() {
       ctx.fill();
     };
 
-    const drawClusterHalo = (node: RenderNode, timestamp: number, rgb: string, focused: boolean) => {
-      const base =
-        node.kind === 'workspace'
-          ? node.radius * 8
-          : node.kind === 'department'
-            ? node.radius * 6.4
-            : node.radius * 5.2;
-      const radius = base + Math.sin(timestamp / 1600 + node.x * 0.01) * 3;
-      const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius);
-      glow.addColorStop(0, `rgba(${rgb}, ${focused ? 0.11 : 0.055})`);
-      glow.addColorStop(0.58, `rgba(${rgb}, ${focused ? 0.045 : 0.018})`);
-      glow.addColorStop(1, `rgba(${rgb}, 0)`);
-      ctx.fillStyle = glow;
+    const drawClusterHalo = (node: RenderNode, timestamp: number, _rgb: string, focused: boolean) => {
+      if (node.kind === 'workspace') return;
+      const base = node.kind === 'department' ? node.radius * 3.8 : node.radius * 2.8;
+      const radius = base + Math.sin(timestamp / 2000 + node.x * 0.01) * 2;
+
+      ctx.save();
       ctx.beginPath();
       ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (node.kind !== 'workspace') {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius * 0.62, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${rgb}, ${focused ? 0.16 : 0.07})`;
-        ctx.lineWidth = 0.7;
-        ctx.setLineDash([2, 9]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
+      ctx.strokeStyle = focused ? 'rgba(225, 6, 0, 0.4)' : 'rgba(0, 0, 0, 0.07)';
+      ctx.lineWidth = focused ? 1.2 : 0.8;
+      ctx.setLineDash([4, 8]);
+      ctx.stroke();
+      ctx.restore();
     };
 
     const drawNode = (
@@ -539,82 +514,102 @@ export function DataNeuralGraph() {
         node.kind === 'customer';
 
       if (node.kind === 'workspace') {
-        drawJarvisCore(node.x, node.y, r, timestamp, pulseRgb, neuralRgb);
-      } else {
-        if (active || hub) {
-          const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 3);
-          glow.addColorStop(0, `rgba(${rgb}, ${active ? 0.22 : 0.1})`);
-          glow.addColorStop(1, `rgba(${rgb}, 0)`);
-          ctx.fillStyle = glow;
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, r * 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
+        // Samaritan Prime Core: Concentric crosshair rings with pulsing crimson core
         ctx.save();
-        ctx.shadowColor = `rgba(${rgb}, ${active ? 0.28 : 0.12})`;
-        ctx.shadowBlur = active || hub ? 16 : 7;
-
         ctx.beginPath();
-        ctx.arc(node.x, node.y, r + (hub ? 2.5 : 1.5), 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${rgb}, ${active ? 0.85 : hub ? 0.55 : 0.4})`;
-        ctx.lineWidth = active ? 1.4 : hub ? 1.2 : 0.8;
+        ctx.arc(node.x, node.y, r * 2.8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(225, 6, 0, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
         ctx.stroke();
-        ctx.restore();
 
         ctx.beginPath();
-        ctx.arc(node.x, node.y, r + (active ? 0.8 : 0), 0, Math.PI * 2);
-        const bead = ctx.createRadialGradient(node.x - r * 0.35, node.y - r * 0.42, 0, node.x, node.y, r * 1.4);
-        bead.addColorStop(0, 'rgba(255,255,255,1)');
-        bead.addColorStop(0.58, active ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.78)');
-        bead.addColorStop(1, `rgba(${rgb}, ${active ? 0.18 : 0.08})`);
-        ctx.fillStyle = bead;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, hub ? r * 0.55 : r * 0.35, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${rgb}, ${active ? 1 : 0.75})`;
-        ctx.fill();
-
-        if (hub) {
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, r * 0.18, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
-        }
-      }
-
-      if (active && interactionRef.current.selectedId === node.id) {
-        const pulse = 2.2 + Math.sin(timestamp / 600) * 0.25;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, r * pulse, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${rgb}, 0.3)`;
-        ctx.lineWidth = 0.8;
-        ctx.setLineDash([3, 6]);
-        ctx.stroke();
+        ctx.arc(node.x, node.y, r * 1.8, 0, Math.PI * 2);
+        ctx.strokeStyle = '#e10600';
+        ctx.lineWidth = 1.2;
         ctx.setLineDash([]);
+        ctx.stroke();
+
+        // Crosshair lines through core
+        ctx.strokeStyle = 'rgba(225, 6, 0, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(node.x - r * 3.2, node.y);
+        ctx.lineTo(node.x + r * 3.2, node.y);
+        ctx.moveTo(node.x, node.y - r * 3.2);
+        ctx.lineTo(node.x, node.y + r * 3.2);
+        ctx.stroke();
+
+        // Inner solid core
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r * 0.9, 0, Math.PI * 2);
+        ctx.fillStyle = '#e10600';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // High-contrast tactical node
+        const isTargetActive = active || interactionRef.current.selectedId === node.id;
+        ctx.save();
+
+        if (isTargetActive) {
+          // Bounding box around selected target
+          const boxSize = r * 2.6;
+          ctx.strokeStyle = '#e10600';
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(node.x - boxSize / 2, node.y - boxSize / 2, boxSize, boxSize);
+
+          // Corner ticks
+          ctx.fillStyle = '#e10600';
+          ctx.font = '9px "Share Tech Mono", monospace';
+          ctx.fillText('+', node.x - boxSize / 2, node.y - boxSize / 2);
+          ctx.fillText('+', node.x + boxSize / 2, node.y - boxSize / 2);
+        }
+
+        // Crisp solid node circle with dark boundary
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r + 1, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = isTargetActive ? '#e10600' : 'rgba(0, 0, 0, 0.85)';
+        ctx.lineWidth = isTargetActive ? 2 : 1.2;
+        ctx.stroke();
+
+        // Node center pip
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, hub ? r * 0.55 : r * 0.45, 0, Math.PI * 2);
+        ctx.fillStyle = isTargetActive ? '#e10600' : `rgba(${rgb}, 0.95)`;
+        ctx.fill();
+
+        ctx.restore();
       }
 
       if (showLabel) {
         const label = node.label.length > 28 ? `${node.label.slice(0, 28)}...` : node.label;
-        const fontSize = node.kind === 'workspace' ? 12 : node.kind === 'department' ? 10 : 9;
-        ctx.font = `500 ${fontSize}px "JetBrains Mono", monospace`;
+        const fontSize = node.kind === 'workspace' ? 11 : node.kind === 'department' ? 10 : 9;
+        ctx.font = `600 ${fontSize}px "Share Tech Mono", monospace`;
         const text = label.toUpperCase();
         const textWidth = ctx.measureText(text).width;
         const labelX = node.x + r + 8;
-        const labelY = node.y - fontSize - 5;
-        const padX = 7;
-        const labelH = fontSize + 10;
+        const labelY = node.y - fontSize / 2 - 2;
+        const padX = 5;
+        const labelH = fontSize + 6;
 
-        roundRect(labelX - padX, labelY, textWidth + padX * 2, labelH, 8);
-        ctx.fillStyle = active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.7)';
-        ctx.fill();
-        ctx.strokeStyle = `rgba(${rgb}, ${active ? 0.24 : 0.12})`;
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
+        // Brutalist 0-radius label box
+        ctx.fillStyle = active ? '#000000' : '#ffffff';
+        ctx.fillRect(labelX - padX, labelY, textWidth + padX * 2, labelH);
+        ctx.strokeStyle = active ? '#e10600' : 'rgba(0, 0, 0, 0.85)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(labelX - padX, labelY, textWidth + padX * 2, labelH);
 
-        ctx.fillStyle = active || node.kind === 'workspace' || node.kind === 'department' ? labelPrimary : labelSecondary;
-        ctx.fillText(text, labelX, labelY + fontSize + 2);
+        ctx.fillStyle = active ? '#ffffff' : '#000000';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, labelX, labelY + labelH / 2);
       }
     };
 
@@ -623,32 +618,26 @@ export function DataNeuralGraph() {
       to: Point,
       progress: number,
       curveOffset: number,
-      neuralRgb: string,
-      pulseRgb: string
+      _neuralRgb: string,
+      _pulseRgb: string
     ) => {
       const { x, y } = curvePoint(from, to, curveOffset, progress);
-      const tail = curvePoint(from, to, curveOffset, Math.max(0, progress - 0.055));
+      const tail = curvePoint(from, to, curveOffset, Math.max(0, progress - 0.04));
 
+      ctx.save();
+      // Packet vector line
       ctx.beginPath();
       ctx.moveTo(tail.x, tail.y);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = `rgba(${pulseRgb}, 0.38)`;
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#e10600';
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      const glow = ctx.createRadialGradient(x, y, 0, x, y, 14);
-      glow.addColorStop(0, `rgba(${pulseRgb}, 0.9)`);
-      glow.addColorStop(0.5, `rgba(${neuralRgb}, 0.4)`);
-      glow.addColorStop(1, `rgba(${neuralRgb}, 0)`);
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(x, y, 14, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(x, y, 2, 0, Math.PI * 2);
-      ctx.fill();
+      // Sharp packet diamond/crosshair pip
+      ctx.fillStyle = '#e10600';
+      ctx.fillRect(x - 2, y - 2, 4, 4);
+
+      ctx.restore();
     };
 
     const draw = (timestamp: number) => {
@@ -845,157 +834,163 @@ export function DataNeuralGraph() {
         />
       </div>
 
-      <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between p-4">
-        <div className="pointer-events-auto glass-panel rounded-xl border border-default px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-neural-core shadow-[0_0_10px_var(--neural-core)] neural-logo-pulse" />
-            <div>
-              <span className="text-sm font-bold tracking-tight text-primary">{APP_NAME}</span>
-              <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-neural">
-                / {WORKSPACE_NAME}
-              </span>
-            </div>
+      <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between p-3">
+        {/* Top-Left Topology Header */}
+        <div className="pointer-events-auto border border-black/90 bg-white/95 px-3.5 py-2 font-mono shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 bg-[#e10600] lamp" />
+            <span className="text-[11px] font-bold uppercase tracking-widest text-black">
+              TOPOLOGY // COMPANY BRAIN
+            </span>
+            <span className="text-[10px] text-black/40">/ SPIL-OPTI</span>
           </div>
-          <p className="mt-1 font-mono text-[9px] uppercase tracking-widest text-muted">
-            {positionedNodes.length} nodes · {graph.links.length} links
+          <p className="mt-0.5 text-[9px] uppercase tracking-widest text-black/60">
+            {positionedNodes.length} NODES · {graph.links.length} LINKS · SYSTEM: NOMINAL
           </p>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-subtle bg-surface/80 p-1 backdrop-blur-xl">
-          <Button variant="ghost" size="sm" onClick={() => setZoom((v) => Math.max(0.4, v - 0.1))} className="!px-2">
-            <ZoomOut size={14} />
-          </Button>
-          <span className="px-1 font-mono text-[10px] text-muted">{Math.round(zoom * 100)}%</span>
-          <Button variant="ghost" size="sm" onClick={() => setZoom((v) => Math.min(2, v + 0.1))} className="!px-2">
-            <ZoomIn size={14} />
-          </Button>
-          <div className="mx-1 h-4 w-px bg-border-subtle" />
-          <Button variant="ghost" size="sm" onClick={resetView} className="!px-2">
-            <RotateCcw size={14} />
-          </Button>
+        {/* Top-Right Tactical Zoom Controls */}
+        <div className="pointer-events-auto flex items-center gap-1 border border-black/90 bg-white/95 p-1 font-mono shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+          <button
+            type="button"
+            onClick={() => setZoom((v) => Math.max(0.4, v - 0.1))}
+            className="px-2 py-0.5 text-xs font-bold hover:bg-black hover:text-white transition-colors"
+          >
+            -
+          </button>
+          <span className="px-1 text-[10px] font-bold text-black/80">{Math.round(zoom * 100)}%</span>
+          <button
+            type="button"
+            onClick={() => setZoom((v) => Math.min(2, v + 0.1))}
+            className="px-2 py-0.5 text-xs font-bold hover:bg-black hover:text-white transition-colors"
+          >
+            +
+          </button>
+          <div className="mx-1 h-3.5 w-px bg-black/20" />
+          <button
+            type="button"
+            onClick={resetView}
+            className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider hover:bg-[#e10600] hover:text-white transition-colors"
+          >
+            RESET
+          </button>
         </div>
       </div>
 
-      <p className="pointer-events-none absolute bottom-4 left-1/2 z-20 -translate-x-1/2 font-mono text-[10px] uppercase tracking-widest text-muted">
-        drag nodes · double-click to focus · scroll to zoom · click to inspect
+      <p className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 font-mono text-[9px] uppercase tracking-widest text-black/40">
+        [ DRAG NODES · DBL-CLICK TO FOCUS · SCROLL TO ZOOM · CLICK TO INSPECT ]
       </p>
 
-      <div className="pointer-events-none absolute bottom-5 left-5 z-20 w-[280px] rounded-2xl border border-subtle bg-surface/80 p-4 shadow-[0_16px_48px_rgba(109,143,232,0.14)] backdrop-blur-xl">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="rounded-lg bg-neural-glow p-1.5 text-neural-core">
-            <Network size={14} />
+      {/* Bottom-Left Tactical Legend */}
+      <div className="pointer-events-none absolute bottom-4 left-4 z-20 w-[240px] border border-black/90 bg-white/95 p-3 font-mono shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+        <div className="mb-2 flex items-center justify-between border-b border-black/15 pb-1 text-[9px] uppercase tracking-widest text-black font-bold">
+          <span>CLASSIFICATION KEY</span>
+          <span className="h-1.5 w-1.5 bg-[#e10600]" />
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 text-[9px] font-semibold text-black/80">
+          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
+            <span className="h-2 w-2 bg-[#e10600]" />
+            <span>DEPARTMENTS</span>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-primary">Company Brain Map</p>
-            <p className="font-mono text-[9px] uppercase tracking-widest text-muted">Live ecosystem prototype</p>
+          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
+            <span className="h-2 w-2 bg-[#1c7a43]" />
+            <span>PERSONNEL</span>
+          </div>
+          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
+            <span className="h-2 w-2 bg-[#8a6a00]" />
+            <span>WORKFLOWS</span>
+          </div>
+          <div className="flex items-center gap-2 border border-black/10 bg-black/[0.02] px-2 py-1">
+            <span className="h-2 w-2 bg-[#111111]" />
+            <span>CUSTOMERS</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: 'Departments', color: 'var(--neural-core)' },
-            { label: 'People', color: 'var(--status-active)' },
-            { label: 'Workflows', color: 'var(--hot-core)' },
-            { label: 'Customers', color: 'var(--violet-core)' },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2 rounded-lg bg-surface/65 px-2.5 py-2">
-              <span className="h-2 w-2 rounded-full" style={{ background: item.color, boxShadow: `0 0 10px ${item.color}` }} />
-              <span className="text-[10px] font-medium text-secondary">{item.label}</span>
+      </div>
+
+      {/* Top Center Tactical Workflow Banner */}
+      <div className="pointer-events-none absolute left-1/2 top-3 z-20 hidden -translate-x-1/2 border border-black/85 bg-white/95 px-4 py-1.5 font-mono shadow-sm lg:block">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 bg-[#e10600]" />
+          <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-black/80">
+            ACTIVE WORKFLOW LOOP: BUG TRIAGE ➔ DEV TASK ➔ OPTI INSIGHT ➔ QA SIGNOFF
+          </span>
+        </div>
+      </div>
+
+      {/* Right-Hand Tactical Target Dossier */}
+      <aside className="absolute right-0 top-0 z-20 flex h-full w-[310px] flex-col border-l border-black/90 bg-white/95 p-4 font-mono shadow-[-8px_0_24px_rgba(0,0,0,0.06)]">
+        <div className="mb-3 border-b border-black/90 pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 bg-[#e10600] lamp" />
+              <span className="text-[9px] uppercase tracking-widest text-black/60 font-bold">
+                TARGET DOSSIER
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute left-1/2 top-5 z-20 hidden w-[360px] -translate-x-1/2 rounded-2xl border border-subtle bg-surface/75 px-4 py-3 shadow-[0_16px_48px_rgba(167,139,250,0.12)] backdrop-blur-xl lg:block">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 rounded-lg bg-[var(--violet-glow)] p-1.5 text-violet-core">
-            <Sparkles size={14} />
+            <span className="text-[9px] text-[#1c7a43] font-bold">NODE: ONLINE</span>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-primary">Signal flow example</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-secondary">
-              Customer bug {'->'} Support triage {'->'} BA scope {'->'} Dev task {'->'} Opti insight {'->'} QA signoff {'->'} Deploy {'->'} Customer review.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <aside className="absolute right-0 top-0 z-20 flex h-full w-[320px] flex-col border-l border-subtle bg-surface/90 p-5 shadow-[-12px_0_40px_rgba(109,143,232,0.10)] backdrop-blur-xl">
-        <div className="mb-5 rounded-2xl border border-subtle bg-gradient-to-br from-white to-elevated p-4 shadow-[0_12px_32px_rgba(109,143,232,0.10)]">
-          <div className="mb-3 flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-neural-core shadow-[0_0_6px_var(--neural-core)]" />
-            <p className="font-mono text-[9px] uppercase tracking-widest text-muted">Selected intelligence node</p>
-          </div>
-          <p className="text-xl font-semibold tracking-tight text-primary">{selectedNode?.label ?? 'SPIL Intelligence'}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-secondary">
-            Click connected signals below to move through this part of the company brain.
+          <h2 className="mt-2 font-display text-lg font-bold uppercase tracking-wider text-black">
+            {selectedNode?.label ?? 'SPIL Intelligence'}
+          </h2>
+          <p className="mt-0.5 text-[9px] uppercase tracking-widest text-black/50">
+            CLASS: {selectedNode?.kind ?? 'ROOT CORE'}
           </p>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {selectedNode ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <div className="mb-2 flex items-center gap-2">
+                <div className="mb-1.5 flex items-center gap-2">
                   <span
-                    className="h-2.5 w-2.5 rounded-full"
+                    className="h-2 w-2"
                     style={{ background: nodeColors[selectedNode.kind] }}
                   />
-                  <Badge variant={nodeBadgeVariant[selectedNode.kind]}>{selectedNode.kind}</Badge>
+                  <span className="border border-black/30 px-1.5 py-0.5 text-[9px] uppercase font-bold text-black">
+                    {selectedNode.kind}
+                  </span>
                 </div>
-                <h3 className="text-base font-semibold leading-snug text-primary">{selectedNode.label}</h3>
                 {selectedNode.meta && (
-                  <p
-                    className="mt-1 font-mono text-[10px] uppercase tracking-widest"
-                    style={{ color: nodeColors[selectedNode.kind] }}
-                  >
-                    {selectedNode.meta}
+                  <p className="font-mono text-[9px] uppercase tracking-widest text-black/60">
+                    METRIC: {selectedNode.meta}
                   </p>
                 )}
               </div>
 
               {selectedNode.description && (
-                <p className="text-xs leading-relaxed text-secondary">{selectedNode.description}</p>
+                <p className="border border-black/10 bg-black/[0.02] p-2 text-[11px] leading-relaxed text-black/80">
+                  {selectedNode.description}
+                </p>
               )}
 
               {selectedNode.details && selectedNode.details.length > 0 && (
-                <dl className="space-y-2 rounded-lg border border-subtle bg-elevated/50 p-3">
+                <dl className="space-y-1.5 border border-black/20 bg-white p-2 text-[10px]">
                   {selectedNode.details.map((detail) => (
-                    <div key={detail.label} className="flex justify-between gap-3 text-xs">
-                      <dt className="font-mono uppercase tracking-wider text-muted">{detail.label}</dt>
-                      <dd className="text-right text-secondary">{detail.value}</dd>
+                    <div key={detail.label} className="flex justify-between gap-2 border-b border-black/[0.06] pb-1">
+                      <dt className="uppercase tracking-wider text-black/50">{detail.label}</dt>
+                      <dd className="text-right font-bold text-black">{detail.value}</dd>
                     </div>
                   ))}
                 </dl>
               )}
 
-              {selectedNode.status && (
-                <div>
-                  <p className="mb-1.5 font-mono text-[9px] uppercase tracking-widest text-muted">Status</p>
-                  <Badge variant="draft">{selectedNode.status}</Badge>
-                </div>
-              )}
-
               {connectedNodes.length > 0 && (
                 <div>
-                  <p className="mb-2 font-mono text-[9px] uppercase tracking-widest text-muted">
-                    Linked · {connectedNodes.length}
+                  <p className="mb-1.5 font-mono text-[9px] uppercase tracking-widest text-black/60 font-bold">
+                    CONNECTED TARGETS // {connectedNodes.length}
                   </p>
-                  <div className="max-h-40 space-y-0.5 overflow-y-auto">
-                    {connectedNodes.slice(0, 10).map((node) => (
+                  <div className="max-h-36 space-y-1 overflow-y-auto">
+                    {connectedNodes.slice(0, 8).map((node) => (
                       <button
                         key={node.id}
                         type="button"
                         onClick={() => setSelectedId(node.id)}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted transition-all hover:bg-overlay hover:text-primary"
+                        className="flex w-full items-center justify-between border border-black/15 bg-white px-2 py-1 text-left text-[10px] text-black hover:border-black hover:bg-black hover:text-white transition-all"
                       >
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ background: nodeColors[node.kind] }}
-                        />
-                        <span className="truncate">{node.label}</span>
-                        <Badge variant={nodeBadgeVariant[node.kind]} className="ml-auto shrink-0 !py-0 text-[8px]">
+                        <span className="truncate font-semibold">{node.label}</span>
+                        <span className="text-[8px] uppercase tracking-wider opacity-60">
                           {node.kind}
-                        </Badge>
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -1004,29 +999,32 @@ export function DataNeuralGraph() {
 
               {selectedNode.route && (
                 <Link to={selectedNode.route}>
-                  <Button className="mt-1 w-full" size="sm">
-                    <Maximize2 size={12} className="mr-2" />
-                    Open full view
-                  </Button>
+                  <button
+                    type="button"
+                    className="mt-2 w-full border border-black bg-black px-3 py-1.5 text-center font-mono text-[9px] font-bold uppercase tracking-widest text-white hover:bg-[#e10600] hover:border-[#e10600] transition-colors"
+                  >
+                    ACCESS ENTITY ➔
+                  </button>
                 </Link>
               )}
             </div>
           ) : (
-            <p className="text-xs text-muted">Click any node to inspect.</p>
+            <p className="text-[10px] text-black/40">SELECT NODE TO INITIALIZE DOSSIER.</p>
           )}
         </div>
 
-        <div className="mt-4 border-t border-subtle pt-4">
-          <div className="grid grid-cols-2 gap-2">
+        {/* Bottom Counts Strip */}
+        <div className="mt-3 border-t border-black/90 pt-3">
+          <div className="grid grid-cols-2 gap-1.5 text-[9px]">
             {[
-              { label: 'Departments', value: counts.departments, color: 'var(--neural-core)' },
-              { label: 'People', value: counts.people, color: 'var(--status-active)' },
-              { label: 'Workflows', value: counts.workflows, color: 'var(--hot-core)' },
-              { label: 'Links', value: counts.links, color: 'var(--violet-core)' },
+              { label: 'DEPTS', value: counts.departments, color: '#e10600' },
+              { label: 'PEOPLE', value: counts.people, color: '#1c7a43' },
+              { label: 'LOOPS', value: counts.workflows, color: '#8a6a00' },
+              { label: 'LINKS', value: counts.links, color: '#111111' },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-lg border border-subtle bg-elevated/40 px-3 py-2">
-                <p className="font-mono text-[9px] uppercase tracking-widest text-muted">{stat.label}</p>
-                <p className="mt-0.5 font-mono text-base font-bold" style={{ color: stat.color }}>
+              <div key={stat.label} className="border border-black/20 bg-white p-1.5">
+                <p className="uppercase tracking-widest text-black/50">{stat.label}</p>
+                <p className="mt-0.5 text-sm font-bold" style={{ color: stat.color }}>
                   {stat.value}
                 </p>
               </div>

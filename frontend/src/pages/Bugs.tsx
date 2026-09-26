@@ -64,18 +64,51 @@ export function Bugs() {
       ) : !filtered?.length ? (
         <EmptyState icon={<Bug size={24} />} title="No bugs found" description="No bugs match the current filter." />
       ) : (
-        <div className="border-t border-black/15">
+        <div className="grid grid-cols-1 gap-2.5">
           {filtered.map((bug) => (
             <button
               key={bug.id}
               type="button"
               onClick={() => setSelected(bug)}
-              className="flex w-full items-baseline justify-between gap-4 border-b border-black/10 py-5 text-left"
+              className="group relative flex w-full flex-col sm:flex-row sm:items-center justify-between gap-3 border border-black/80 bg-white p-3.5 text-left transition-all hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
             >
-              <span className="font-display text-lg tracking-wide text-black">{bug.title}</span>
-              <span className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-black/70">
-                {bug.severity} · {bug.status.replace('_', ' ')}
+              {/* Crosshairs */}
+              <span className="absolute -top-[3px] -left-[3px] font-mono text-[8px] leading-none text-black/40 select-none">
+                +
               </span>
+              <span className="absolute -top-[3px] -right-[3px] font-mono text-[8px] leading-none text-black/40 select-none">
+                +
+              </span>
+
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[10px] font-bold text-[#e10600]">
+                  BUG-{bug.id.slice(0, 5).toUpperCase()}
+                </span>
+                <span className="font-mono text-sm font-semibold tracking-wide text-black group-hover:text-[#e10600] transition-colors">
+                  {bug.title}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em]">
+                <span
+                  className={cn(
+                    'border px-2 py-0.5 font-bold',
+                    bug.severity === 'CRITICAL'
+                      ? 'border-[#e10600] bg-[#e10600]/10 text-[#e10600]'
+                      : bug.severity === 'HIGH'
+                      ? 'border-[#e10600]/70 text-[#e10600]'
+                      : 'border-black/30 text-black/60'
+                  )}
+                >
+                  {bug.severity}
+                </span>
+                <span className="border border-black/40 bg-black/5 px-2 py-0.5 font-bold text-black/80">
+                  {bug.status.replace('_', ' ')}
+                </span>
+                <span className="text-[#e10600] opacity-0 group-hover:opacity-100 transition-opacity">
+                  ➔
+                </span>
+              </div>
             </button>
           ))}
         </div>
