@@ -17,15 +17,22 @@ async function geometryUp(): Promise<boolean> {
   }
 }
 
+import * as kernel from '../kernel/index.js';
+
 export async function getAuraStatus(_req: Request, res: Response) {
   const geometry: Organ = (await geometryUp()) ? 'up' : 'down';
+
+  // Real 24h metrics from append-only event store
+  const past24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const counts = await kernel.countSince(past24h);
+
   res.json({
     organs: {
       geometry,
       canvas: 'idle' as const,
       nesting: 'asleep' as const,
     },
-    proposals: { pending: 0 },
-    doors: { pending: 0 },
+    proposals: { pending: counts.executed }, // Actual compensable executions
+    doors: { pending: counts.refused },     // Actual critical refusals
   });
 }
